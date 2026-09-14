@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: errata-ai/vale-action@d89dee975228ae261d22c15adcd03578634d429c # v2.1.1
+      - uses: errata-ai/vale-action@518a9136acc6e6668ce7c00d367051e0941e87ff # v3.0.0
         env:
           VALE_CONFIG_PATH: ./.vale.ini
         with:
