@@ -54,7 +54,7 @@ This page tracks user-facing changes to js-recon, mirroring the `dev`-branch `CH
 ### Security
 
 - Removed the `fs` npm package from dependencies. It was never referenced by the codebase and sat unused in `package-lock.json` as an extraneous entry; the `fs` package on npm (distinct from Node's builtin module) is flagged as malicious by OSV (`MAL-2025-21003`).
-- Enabled Dependabot version updates for the npm, Docker, and GitHub Actions ecosystems, opening weekly PRs against `dev` so outdated dependencies surface automatically instead of only being caught at release time.
+- Enabled Dependabot version updates for the npm, Docker, and GitHub Actions ecosystems, opening weekly pull requests against `dev` so outdated dependencies surface automatically instead of only being caught at release time.
 
 ### Added
 
