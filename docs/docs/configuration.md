@@ -58,6 +58,12 @@ js-recon --config ./operator.yaml run \
   -u https://app.example.com
 ```
 
-`JS_RECON_OXYLABS_USERNAME`, `JS_RECON_OXYLABS_PASSWORD`, and `JS_RECON_OXYLABS_COUNTRY` override their
-YAML values unless `--ignore-proxy-env` is set. See [Proxy](./modules/proxy.md) for the credential-based
+Fallback traffic goes through the datacenter entry endpoint `dc.oxylabs.io:8000` unless
+`oxylabs.endpoint` names another `host:port`. The endpoint receives the Oxylabs password, so a YAML
+endpoint only receives the YAML password. With `JS_RECON_OXYLABS_PASSWORD`, set
+`JS_RECON_OXYLABS_ENDPOINT` as well. js-recon stops before sending any request when the endpoint breaks
+this rule, or isn't a bare `host:port`.
+
+`JS_RECON_OXYLABS_USERNAME`, `JS_RECON_OXYLABS_PASSWORD`, `JS_RECON_OXYLABS_COUNTRY`, and
+`JS_RECON_OXYLABS_ENDPOINT` override their YAML values unless `--ignore-proxy-env` is set. See [Proxy](./modules/proxy.md) for the credential-based
 Oxylabs proxy method, which is a separate feature from this opt-in fallback.
