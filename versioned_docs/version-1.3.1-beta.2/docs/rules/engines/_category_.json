@@ -1,8 +1,0 @@
-{
-    "label": "Engines",
-    "position": 3,
-    "link": {
-        "type": "generated-index",
-        "description": "Engines for JS Recon analyze module"
-    }
-}

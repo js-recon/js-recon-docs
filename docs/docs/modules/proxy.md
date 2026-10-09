@@ -88,7 +88,8 @@ A single file holds one key per method plus the currently active `method`:
     "oxylabs": {
         "username": "...",
         "password": "...",
-        "country": "US"
+        "country": "US",
+        "endpoint": "dc.oxylabs.io:8000"
     }
 }
 ```
@@ -132,7 +133,9 @@ js-recon run -u https://example.com --proxy-config .proxy_config.json
     - `JS_RECON_PROXY_METHOD` (`aws` | `socks` | `http` | `oxylabs`)
     - `JS_RECON_PROXY_URL` (for the `socks`/`http` methods)
     - `JS_RECON_OXYLABS_USERNAME`, `JS_RECON_OXYLABS_PASSWORD`, `JS_RECON_OXYLABS_COUNTRY`,
-      `JS_RECON_OXYLABS_CITY`, `JS_RECON_OXYLABS_SESSION_ID`
+      `JS_RECON_OXYLABS_CITY`, `JS_RECON_OXYLABS_SESSION_ID`, `JS_RECON_OXYLABS_ENDPOINT` (a config file
+      endpoint never receives a command-line or environment password; see
+      [Oxylabs entry endpoint](./proxy/oxylabs#entry-endpoint))
     - The `aws` method has no `JS_RECON_`-prefixed env vars of its own. Since `lazyload` and `run` don't
       accept `--aws-access-key`/`--aws-secret-key`/`-r`/`--region` (those stay `proxy`-only), these
       consumers resolve AWS credentials and region from the plain AWS SDK env vars

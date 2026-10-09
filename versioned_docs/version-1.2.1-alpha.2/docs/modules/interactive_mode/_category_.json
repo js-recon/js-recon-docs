@@ -1,8 +1,0 @@
-{
-    "label": "Interactive Mode",
-    "position": 7,
-    "link": {
-        "type": "generated-index",
-        "description": "Interactive mode allows specific analysis on the downloaded JS files"
-    }
-}

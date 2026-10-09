@@ -1,8 +1,0 @@
-{
-    "label": "Map Reference",
-    "position": 6,
-    "link": {
-        "type": "generated-index",
-        "description": "Interactive mode allows specific analysis on the downloaded JS files"
-    }
-}

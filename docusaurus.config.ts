@@ -79,6 +79,10 @@ const config: Config = {
                     label: "Guides",
                 },
                 {
+                    href: "/research",
+                    label: "Research",
+                },
+                {
                     href: "/labs",
                     label: "Labs",
                 },

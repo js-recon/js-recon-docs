@@ -1,8 +1,0 @@
-{
-    "label": "CI/CD",
-    "position": 12,
-    "link": {
-        "type": "generated-index",
-        "description": "Running JS Recon as part of automated workflows."
-    }
-}
