@@ -47,7 +47,7 @@ const config: Config = {
                     editUrl:
                         "https://github.com/js-recon/js-recon-docs/edit/main/",
 
-                    lastVersion: "1.4.4",
+                    lastVersion: "2.0.1",
                 },
                 theme: {
                     customCss: "./src/css/custom.css",

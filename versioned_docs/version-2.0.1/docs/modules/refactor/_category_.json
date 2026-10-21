@@ -1,0 +1,8 @@
+{
+    "label": "Refactor Technology Reference",
+    "position": 11,
+    "link": {
+        "type": "generated-index",
+        "description": "Technology-specific documentation for the refactor module"
+    }
+}
