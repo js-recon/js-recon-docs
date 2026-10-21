@@ -85,21 +85,23 @@ This scan is independent of the URL/transport resolvers — it does not require 
 
 ### taintwire resolution (`--map-taintwire`)
 
-`--map-taintwire` switches API call resolution to [taintwire](https://taintwire.js-recon.io). taintwire loads each JS file into a graph of its syntax tree, scopes and value flow, and `map` finds the calls with Cypher queries:
+`--map-taintwire` switches API call resolution to [taintwire](https://taintwire.js-recon.io), for every tech. taintwire loads each JS file (for Next.js, each webpack or Turbopack module) into a graph of its syntax tree, scopes and value flow, and `map` finds the calls with Cypher queries:
 
-- `fetch(...)`, including aliases such as `const f = fetch`
+- `fetch(...)` and `$fetch(...)`, including aliases such as `const f = fetch`
+- a `fetch` passed in by destructuring, such as SvelteKit's `load({ fetch })`
+- Nuxt's `useFetch`/`useLazyFetch`, recognized by the key argument Nuxt adds when it compiles them
 - `XMLHttpRequest`: `.open()`, `.setRequestHeader()` and `.send()` on the same instance
-- HTTP clients: `<client>.get/post/put/delete/patch/head/options(url, ...)`
+- HTTP clients: `<client>.get/post/put/delete/patch/head/options(url, ...)`, prefixed with the `baseURL` of the `axios.create()` call the client comes from, when that's in the same file
+- config objects: `axios({ url, method })`, `$.ajax({ url, type })`, `new X({ url, method })`
+- Next.js Server Actions (`createServerReference(...)`)
 
-For each call, it follows the value flow back to the URL, method, headers and body. It joins strings, template literals and `.concat()` calls, takes both sides of a `? :` or `||`, and follows a local wrapper function to each of its callers, so a wrapper called with two paths gives both URLs. Values it can't resolve stay as placeholders, which the OpenAPI output turns into path parameters.
-
-The flag works for `react` so far. Other techs print a notice and use the Babel resolvers, which remain the default. GraphQL extraction and interactive mode are the same in both modes.
+For each call, it follows the value flow back to the URL, method, headers and body. It joins strings, template literals and `.concat()` calls, takes both sides of a `? :` or `||`, and follows a local wrapper function to each of its callers, so a wrapper called with two paths gives both URLs. Values it can't resolve stay as placeholders, which the OpenAPI output turns into path parameters. The Babel resolvers remain the default. GraphQL extraction and interactive mode are the same in both modes.
 
 ```bash
 js-recon map -d /path/to/js-files -t react --openapi --map-taintwire
 ```
 
-taintwire doesn't yet follow values across files, through object properties, or through webpack module exports, so wrappers exported from another chunk stay unresolved. Building the graph is slow: expect `map` to take 10 to 20 times longer than with the Babel resolvers, about 6 seconds for a 180 KB bundle.
+taintwire doesn't yet follow values across files, through object properties, or through webpack module exports, so wrappers and axios instances exported from another file or chunk stay unresolved, and Server Action arguments are only filled in when the action is called from the same module. Building the graph is slow: expect `map` to take 5 to 20 times longer than with the Babel resolvers.
 
 ### Limitations
 
