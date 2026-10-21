@@ -616,45 +616,99 @@ table tr:nth-child(even) td {
 }
 
 /* ── Announcement bar ────────────────────────────────────────────── */
-/* The bar and navbar stick together; everything else that sticks below the
-   navbar is pushed down by --jsr-top-offset, which drops to 0 once the bar
-   is dismissed. */
+/* Two stacked bars (the v2 bar is Docusaurus's own; the research bar comes
+   from src/theme/AnnouncementBar) stick above the navbar. Each one shown adds
+   its height to --jsr-top-offset, which pushes down the navbar and everything
+   that sticks below it, and drops back as the bars are dismissed. */
 :root {
     --jsr-announce-h: 34px;
-    --jsr-top-offset: 0px;
+    --jsr-bar1-h: 0px;
+    --jsr-bar2-h: 0px;
+    --jsr-top-offset: calc(var(--jsr-bar1-h) + var(--jsr-bar2-h));
 }
 
 :root:not([data-announcement-bar-initially-dismissed="true"]):has(
         div[class*="announcementBar_"]
     ) {
-    --jsr-top-offset: var(--jsr-announce-h);
+    --jsr-bar1-h: var(--jsr-announce-h);
 }
 
-div[class*="announcementBar_"] {
+:root:not([data-jsr-research-dismissed="true"]):has(.jsr-bar--research) {
+    --jsr-bar2-h: var(--jsr-announce-h);
+}
+
+html[data-jsr-research-dismissed="true"] .jsr-bar--research {
+    display: none;
+}
+
+div[class*="announcementBar_"],
+.jsr-bar {
     position: sticky;
     top: 0;
     z-index: var(--ifm-z-index-fixed);
     height: var(--jsr-announce-h);
+    color: oklch(0.98 0.005 250);
+    border-bottom: 1px solid oklch(1 0 0 / 0.08);
+}
+
+div[class*="announcementBar_"] {
     background: linear-gradient(
         90deg,
         oklch(0.32 0.1 250),
         oklch(0.42 0.14 210),
         oklch(0.36 0.12 280)
     );
-    color: oklch(0.98 0.005 250);
-    border-bottom: 1px solid oklch(1 0 0 / 0.08);
 }
 
-div[class*="announcementBar_"] button {
+/* Mirrors the stock bar's flex layout (placeholder | content | close) */
+.jsr-bar {
+    top: var(--jsr-bar1-h);
+    display: flex;
+    align-items: center;
+    background: linear-gradient(
+        90deg,
+        oklch(0.3 0.07 165),
+        oklch(0.4 0.1 158),
+        oklch(0.34 0.08 185)
+    );
+}
+
+.jsr-bar__placeholder {
+    flex: 0 0 10px;
+}
+
+.jsr-bar__content {
+    flex: 1 1 auto;
+    text-align: center;
+}
+
+.jsr-bar__close {
+    flex: 0 0 30px;
+    align-self: stretch;
+    padding: 0;
+    line-height: 0;
+}
+
+@media (min-width: 997px) {
+    .jsr-bar__placeholder,
+    .jsr-bar__close {
+        flex-basis: 50px;
+    }
+}
+
+div[class*="announcementBar_"] button,
+.jsr-bar__close {
     color: oklch(0.98 0.005 250);
     opacity: 0.6;
 }
 
-div[class*="announcementBar_"] button:hover {
+div[class*="announcementBar_"] button:hover,
+.jsr-bar__close:hover {
     opacity: 1;
 }
 
-div[class*="announcementBar_"] button svg {
+div[class*="announcementBar_"] button svg,
+.jsr-bar__close svg {
     width: 10px;
     height: 10px;
 }
@@ -667,6 +721,14 @@ div[class*="announcementBar_"] button svg {
     font-size: 14px;
     font-weight: 500;
     text-decoration: none;
+}
+
+.jsr-announce > span {
+    white-space: nowrap;
+}
+
+.jsr-show-sm {
+    display: none;
 }
 
 .jsr-announce:hover {
@@ -713,6 +775,14 @@ div[class*="announcementBar_"] button svg {
     .jsr-announce__pill {
         padding: 1px 6px;
         font-size: 10px;
+    }
+
+    .jsr-hide-sm {
+        display: none;
+    }
+
+    .jsr-show-sm {
+        display: inline;
     }
 }
 

@@ -56,6 +56,16 @@ const config: Config = {
         ],
     ],
 
+    headTags: [
+        {
+            // Hide a dismissed research bar before first paint (see src/theme/AnnouncementBar)
+            tagName: "script",
+            attributes: {},
+            innerHTML:
+                'try{localStorage.getItem("jsr.research-bar.dismissed")==="true"&&document.documentElement.setAttribute("data-jsr-research-dismissed","true")}catch(e){}',
+        },
+    ],
+
     themeConfig: {
         // Replace with your project's social card
         image: "img/social-card.jpg",
