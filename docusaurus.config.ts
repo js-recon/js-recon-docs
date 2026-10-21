@@ -59,6 +59,12 @@ const config: Config = {
     themeConfig: {
         // Replace with your project's social card
         image: "img/social-card.jpg",
+        announcementBar: {
+            id: "js-recon-v2",
+            content:
+                '<a class="jsr-announce" href="https://x.com/ss0x00/status/2112753230966882529" target="_blank" rel="noopener noreferrer"><span class="jsr-announce__pill">New</span><span class="jsr-announce__text">JS Recon v2 is here</span><span class="jsr-announce__cta">See what\'s new <span aria-hidden="true">→</span></span></a>',
+            isCloseable: true,
+        },
         navbar: {
             title: "JS Recon",
             logo: {
