@@ -23,6 +23,7 @@ js-recon report [options]
 | `--map-openapi, --mapped-openapi-json <file>` |       | Mapped OpenAPI JSON file                                                                                       |               | No       |
 | `--exploit-json <file>`                       |       | Exploit findings JSON file, in `EngineOutput` format (see [Exploit command — `--engine-output`](./exploit.md)) |               | No       |
 | `--output <file>`                             | `-o`  | Output file name (without the extension)                                                                       | `report`      | No       |
+| `--js-dir <dir>`                              | `-d`  | Directory of downloaded JS files to store in the `raw_files` table (usually `output`)                          |               | No       |
 | `--sj`                                        |       | Run `sj` (swagger-jacker) against the mapped OpenAPI spec (requires `sj` to be installed)                      | `false`       | No       |
 | `--sj-bin <path>`                             |       | Path/name of the `sj` binary                                                                                   | `sj`          | No       |
 | `--sj-args <args>`                            |       | Extra arguments passed through to `sj automate`                                                                |               | No       |
@@ -81,9 +82,9 @@ in both the Home markdown view and the sortable Data Tables view.
 
 ## Database schema (`js-recon.db`)
 
-Alongside `report.html`, the `report` command populates a SQLite database (`js-recon.db` by default, or the path given to `--sqlite-db`) using [better-sqlite3](https://github.com/WiseLibs/better-sqlite3). There is no ORM and no migration system — the schema is created with `CREATE TABLE IF NOT EXISTS` on every run, and each table is fully rebuilt (with one exception, noted below) from whichever input JSON files were passed to `report`. Tables for inputs that weren't supplied are simply left empty.
+Alongside `report.html`, the `report` command populates a SQLite database (`js-recon.db` by default, or the path given to `--sqlite-db`) using [better-sqlite3](https://github.com/WiseLibs/better-sqlite3). There is no ORM and no migration system — the schema is created with `CREATE TABLE IF NOT EXISTS` on every run, and each table is fully rebuilt (with one exception, noted below) from whichever input JSON files were passed to `report`. Tables for inputs that weren't supplied are simply left empty. Because the schema is created on every run, a database from an older version gains any newly added tables the next time `report` writes to it.
 
-The database has four tables:
+The database has five tables:
 
 ### `mapped`
 
@@ -146,3 +147,20 @@ Populated from `analyze.json` (one row per rule finding produced by the `analyze
 | `findingLocation` | TEXT |                                                         |
 
 No primary key or other constraints. Rows are cleared (`DELETE FROM analysis_findings`) before each run's insert.
+
+### `raw_files`
+
+Populated from the directory passed to `--js-dir` (`run` passes its download directory automatically). Stores the JavaScript files `lazyload` downloaded, so the database can be shared as a self-contained export of the session. Only files carrying the `// File Source: <url>` header that `lazyload` writes at the top of every downloaded JavaScript file are stored; other files in the directory (JSON, source maps, pipeline output) are skipped.
+
+| Column    | Type | Notes                                                                                                         |
+| --------- | ---- | ------------------------------------------------------------------------------------------------------------- |
+| `path`    | TEXT | Primary key. Path of the file relative to the database's directory (for example `output/example.com/app.js`). |
+| `url`     | TEXT | URL the file was downloaded from (for inline scripts, the URL of the page they were found on).                |
+| `content` | TEXT | Full file contents, exactly as saved on disk (including the `// File Source:` header).                        |
+
+Rows are cleared (`DELETE FROM raw_files`) before each run's insert. To restore the files from a database:
+
+```bash
+sqlite3 js-recon.db "SELECT path FROM raw_files"
+sqlite3 js-recon.db "SELECT content FROM raw_files WHERE path = 'output/example.com/app.js'" > app.js
+```
