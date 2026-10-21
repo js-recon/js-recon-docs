@@ -17,6 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: getplumber/plumber@ef9864df81f444647d95889d98695434f6fa9732 # v0.4.12, 2026-07-20
+      - uses: getplumber/plumber@cd1ecdf0a0053f9b0cc123976bb369772d876af3 # v0.4.12, 2026-07-20
         with:
           score-push: true
