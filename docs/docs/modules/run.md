@@ -209,7 +209,7 @@ This lets you query findings, endpoints, and mapped chunks across every target i
 
 ### schema
 
-The global database reuses the same four tables as the per-domain database (`mapped`, `mapped_openapi`, `endpoints`, `analysis_findings`), with two differences:
+The global database reuses the same five tables as the per-domain database (`mapped`, `mapped_openapi`, `endpoints`, `analysis_findings`, `raw_files`), with two differences:
 
 - Every table gains a **`domain`** column — the sanitized host used for that target's output directory (for example `example.com` or `example.com_8443` when a non-default port is in the URL). This doubles as a foreign key back to the corresponding `<output>/<domain>/` directory.
 - Primary keys that were only unique within a single domain are widened so rows from different domains never collide or overwrite each other:
@@ -217,6 +217,7 @@ The global database reuses the same four tables as the per-domain database (`map
     - `mapped_openapi`'s primary key becomes `(domain, path, method)`.
     - `endpoints`'s primary key becomes `(domain, url)`.
     - `analysis_findings` gains an autoincrement `globalId` primary key.
+    - `raw_files`'s primary key becomes `(domain, path)`. `path` stays relative to that domain's own directory.
 
 ### Behavior
 
