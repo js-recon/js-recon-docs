@@ -224,6 +224,7 @@ The global database reuses the same five tables as the per-domain database (`map
 
 - The global database is created once at the start of a batch run and updated after each target finishes its own `report` step — it accumulates across the whole batch rather than being replaced.
 - If a target's pipeline stops before the `report` step (for example, an unsupported framework), that domain has no `js-recon.db` to merge and is skipped with a warning; the rest of the batch continues normally.
+- If some targets fail with an unhandled error, the batch still processes every remaining target and then exits with code `36` (see [Exit Codes](../exit_codes.md)), so the merged `js-recon.db` from the targets that succeeded can still be used. If every target fails, `run` exits with `1`.
 - This behavior is automatic in batch mode and requires no extra flags. Single-URL mode (`-u <url>`) is unaffected — there's only one domain, so no global database is created.
 
 ## Web stats dashboard
