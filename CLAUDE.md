@@ -55,7 +55,8 @@ docs/
 │   │   └── engines/              ← Engine reference        (category pos 4)
 │   │       ├── request-engine.md (pos 1)
 │   │       ├── ast-engine.md     (pos 2)
-│   │       └── cs-mast-s-engine.md (pos 3)
+│   │       ├── cs-mast-s-engine.md (pos 3)
+│   │       └── taintwire-engine.md (pos 4)
 │   ├── example-scenarios/        ← End-to-end walkthroughs (category position: 8)
 │   │   ├── next-js.md            (pos 1)
 │   │   ├── using-proxy.md        (pos 2)
@@ -154,7 +155,7 @@ Use for:
 
 - YAML rule schema specification
 - Predefined rule catalog with descriptions
-- Engine documentation (request engine, AST engine, CS-MAST-S engine)
+- Engine documentation (request engine, AST engine, CS-MAST-S engine, taintwire engine)
 
 ### `docs/docs/ci_cd/` — CI/CD reference
 

@@ -153,7 +153,7 @@ _createElementVNode(
     _mergeProps({ class: "comment-content" }, { innerHTML: comment.content }),
     null,
     16,
-    ["innerHTML"]
+    ["innerHTML"],
 );
 ```
 
@@ -278,6 +278,53 @@ Fires on a `.replace(/pattern/, "")` call whose regex looks like an HTML/script 
 `severity: medium`
 
 Fires on an `Object.assign(target, JSON.parse(input))` call — merging a freshly parsed JSON value directly into another object with no `__proto__`/`constructor`/`prototype` key filtering. If `input` is attacker-controlled (a postMessage payload, a URL parameter, a response body), an attacker can supply `{"__proto__":{"x":1}}` to pollute `Object.prototype` itself, silently changing the behavior of every object on the page. This is a common gadget for auth-check bypass or config override once a nested property the app trusts gets overwritten. Presence-based: it fires on the merge shape itself, since a guard that would make this safe isn't always visible in the same expression.
+
+---
+
+## taintwire rules
+
+These rules are evaluated by the [taintwire engine](./engines/taintwire-engine.md), and only when you pass `--analyze-taintwire` to `analyze` or `run`. Each one follows a value from a source to a sink through variables, function arguments and return values inside a chunk, in `deep` mode, and drops flows longer than 8 hops. They cover the same classes as several AST rules above, but don't need the source and sink to be directly connected in one expression.
+
+Sources used below:
+
+- **URL:** `location.hash`, `location.search`, `location.href` (also `window.location.*`), `document.URL`, `document.documentURI`, `document.referrer`, `document.baseURI`.
+- **URL without `href`:** the same, minus `location.href`. Frameworks and libraries routinely navigate with, or store, the current URL, so `href` is left out where it caused false positives.
+
+### `detect_taintwire_dom_xss_url` — URL or `window.name` value reaches an HTML sink
+
+`severity: high`
+
+Source: URL or `window.name`. Sink: `innerHTML`/`outerHTML`/`srcdoc`/`cssText` assignment, `document.write`, `insertAdjacentHTML`, jQuery `.html()`, `createContextualFragment`, `setHTMLUnsafe`, React `dangerouslySetInnerHTML.__html`, compiled Vue `v-html`, and an Angular `innerHTML` property call.
+
+### `detect_taintwire_js_exec_url` — URL or `window.name` value reaches `eval` / `Function` / string timer
+
+`severity: high`
+
+Source: URL or `window.name`. Sink: `eval()`, `Function()`/`new Function()`, and a non-function first argument to `setTimeout`/`setInterval`.
+
+### `detect_taintwire_postmessage_flow` — `postMessage` data reaches an HTML, JS execution or navigation sink
+
+`severity: high`
+
+Source: `.data` of the first parameter of a `message` listener (`addEventListener('message', h)` or `onmessage = h`, with `h` inline or a named function). Sink: any HTML or JS execution sink above, or a navigation sink (see the next rule). It doesn't check whether the listener validates `event.origin`; [`detect_postmessage_weak_origin_check`](#detect_postmessage_weak_origin_check--postmessage-handler-using-a-bypassable-origin-check-idiom) covers that.
+
+### `detect_taintwire_open_redirect_url` — URL value reaches a navigation sink
+
+`severity: medium`
+
+Source: URL without `href`. Sink: `location = v`, `x.location = v`, `x.href = v`, `location.assign`/`replace`, `window.open`, and `setAttribute` of `href`/`src`/`action`/`formaction`/`srcdoc` (or a dynamic attribute name).
+
+### `detect_taintwire_cspt_url_request` — URL value reaches a request URL
+
+`severity: medium`
+
+Source: URL. Sink: the URL argument of `fetch`, `$fetch`, `axios` and `axios.get`/`post`/..., `window.fetch`, `XMLHttpRequest.open`, `new WebSocket` and `new EventSource`. Check whether the value can change the request path (client-side path traversal) or only the query string.
+
+### `detect_taintwire_storage_url` — URL value written to a cookie or web storage
+
+`severity: low`
+
+Source: URL without `href`. Sink: `document.cookie = v` and `localStorage`/`sessionStorage.setItem(_, v)`. `document.cookie` isn't a source, because cookie helper libraries read and rewrite it.
 
 ---
 
