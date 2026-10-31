@@ -279,6 +279,60 @@ Fires on a `.replace(/pattern/, "")` call whose regex looks like an HTML/script 
 
 Fires on an `Object.assign(target, JSON.parse(input))` call — merging a freshly parsed JSON value directly into another object with no `__proto__`/`constructor`/`prototype` key filtering. If `input` is attacker-controlled (a postMessage payload, a URL parameter, a response body), an attacker can supply `{"__proto__":{"x":1}}` to pollute `Object.prototype` itself, silently changing the behavior of every object on the page. This is a common gadget for auth-check bypass or config override once a nested property the app trusts gets overwritten. Presence-based: it fires on the merge shape itself, since a guard that would make this safe isn't always visible in the same expression.
 
+### `detect_weak_crypto_algorithm` — broken or weak cryptographic algorithm
+
+`severity: low`
+
+Fires on MD5, MD4, SHA-1, DES, Triple DES, RC4 or Rabbit through a CryptoJS-style library, `crypto.subtle.digest`/`importKey`/`sign` with SHA-1, `createHash`/`createHmac` with `md5`/`sha1`, and the ECB block mode. Harmless for non-security checksums, broken for signatures, password hashing, integrity checks or encryption: check what the result protects.
+
+### `detect_dompurify_unsafe_config` — DOMPurify configured to allow script-capable markup
+
+`severity: medium`
+
+Fires on a DOMPurify config with `ALLOW_UNKNOWN_PROTOCOLS: true`, `ADD_TAGS` containing `script`/`iframe`/`object`/`embed`/`base`/`meta`/`style`/`svg`/`math`, or `ADD_ATTR` containing an `on*` handler, `srcdoc`, `formaction` or `xlink:href`. Output sanitized with such a config can still run script.
+
+### `detect_angularjs_sce_disabled` — AngularJS Strict Contextual Escaping disabled
+
+`severity: medium`
+
+Fires on `.enabled(false)` (or `.enabled(!1)`) inside the config function, or its dependency-injection array, that injects `$sceProvider`. With SCE off, `ng-bind-html` and other bindings render untrusted values without sanitization.
+
+### `detect_angularjs_wildcard_resource_url_allowlist` — AngularJS resource URL allowlist with a wildcard
+
+`severity: medium`
+
+Fires when `resourceUrlWhitelist`/`trustedResourceUrlList` gets `'**'` or a pattern with a wildcard scheme or host (`https://**`, `*://**`). Every matching URL is then trusted for `ng-include`, `templateUrl` and iframe sources.
+
+### `detect_document_domain_assignment` — `document.domain` assignment
+
+`severity: low`
+
+Fires on any write to `document.domain`. Pages on sibling subdomains that set the same value can then script this page.
+
+### `detect_cleartext_websocket` — WebSocket over `ws://`
+
+`severity: low`
+
+Fires on `new WebSocket()` with a constant `ws://` URL to a non-local host. The traffic is sent in clear text without authentication; use `wss://`.
+
+### `detect_eval_of_decoded_constant` — encoded constant decoded and executed
+
+`severity: medium`
+
+Fires on `eval`, `Function`, or a string `setTimeout`/`setInterval` whose argument is `atob`, `unescape`, `decodeURIComponent` or `String.fromCharCode` of a constant. Shipping encoded source and running it is a common shape for injected skimmers and obfuscated third-party code.
+
+### `detect_window_open_without_noopener` — `window.open` to a new tab without `noopener`
+
+`severity: info`
+
+Fires on `window.open(url, '_blank')` with no `windowFeatures`. Unlike `<a target=_blank>`, `window.open` doesn't imply `noopener`, so the opened page can navigate this tab, for example to a phishing copy of it.
+
+### `detect_auth_token_in_web_storage` — authentication token in `localStorage`/`sessionStorage`
+
+`severity: info`
+
+Fires on `setItem` with a key that names an access, refresh, ID, auth or session token, a JWT, an API key or a secret. Any script on the origin, so any XSS, can read web storage; an `HttpOnly` cookie isn't exposed that way.
+
 ---
 
 ## taintwire rules
@@ -325,6 +379,40 @@ Source: URL. Sink: the URL argument of `fetch`, `$fetch`, `axios` and `axios.get
 `severity: low`
 
 Source: URL without `href`. Sink: `document.cookie = v` and `localStorage`/`sessionStorage.setItem(_, v)`. `document.cookie` isn't a source, because cookie helper libraries read and rewrite it.
+
+### More taintwire rules
+
+All in `deep` mode with a limit of 8 hops. **URL** and **URL without `href`** are the sources defined above; **name** is `window.name`.
+
+| Rule                                            | Source                                                                              | Sink                                                                                                                                                                                                                             | Severity |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `detect_taintwire_dom_xss_framework_sinks`      | URL, name                                                                           | jQuery `$()`/`jQuery()`, `.wrap*()`, `$.parseHTML`, `DOMParser.parseFromString`, `parseHTMLUnsafe`, `execCommand('insertHTML')`, Angular `bypassSecurityTrust*`                                                                  | high     |
+| `detect_taintwire_script_injection_url`         | URL, name                                                                           | `new Worker`/`SharedWorker`, `importScripts`, `serviceWorker.register`, dynamic `import()`, `$.getScript`/`$.globalEval`, `setImmediate`/`execScript`, `setAttribute('on…')`, `src`/`text`/`textContent` of a created `<script>` | high     |
+| `detect_taintwire_template_injection_url`       | URL, name                                                                           | `_.template`, `.compile`/`.precompile`, AngularJS `$compile`/`$interpolate`/`$parse`/`$eval`/`$apply`/`$watch`, a `template:` component option                                                                                   | high     |
+| `detect_taintwire_postmessage_extended_flow`    | `postMessage` data                                                                  | the framework HTML, script and template sinks above, request URLs, cookie and web storage writes, `document.domain`, prototype-pollution sinks                                                                                   | high     |
+| `detect_taintwire_client_side_sql_injection`    | URL, name                                                                           | WebSQL `executeSql`, SQLite WASM / sql.js `prepare`/`selectValue`/`selectObjects`, `{ sql: … }`                                                                                                                                  | high     |
+| `detect_taintwire_stored_dom_xss`               | `localStorage`/`sessionStorage.getItem`, `document.cookie` read, `history.state`    | HTML and JavaScript execution sinks                                                                                                                                                                                              | medium   |
+| `detect_taintwire_api_response_html_xss`        | `await response.json()`/`.text()`, `xhr.responseText`/`responseXML`                 | HTML and JavaScript execution sinks (stored XSS)                                                                                                                                                                                 | medium   |
+| `detect_taintwire_link_manipulation_url`        | URL without `href`                                                                  | `.src`/`.action`/`.formAction`/`.data`/`.poster`/`.srcset`/… assignment, `setAttribute`/`setAttributeNS` of URL attributes, jQuery `.attr()`/`.prop()` of `href`/`src`/`action`/…                                                | medium   |
+| `detect_taintwire_open_redirect_location_parts` | URL without `href`                                                                  | `location.host`/`hostname`/`protocol` assignment, `navigation.navigate()`                                                                                                                                                        | medium   |
+| `detect_taintwire_cspt_extended_request`        | URL without `href`                                                                  | jQuery `$.ajax`/`$.get`/`$.post`/`$.getJSON`/`.load`, `navigator.sendBeacon`, `new Request`, `url`/`baseURL` of a request config object that also sets `method`, `headers`, `data`, `params` or similar                          | medium   |
+| `detect_taintwire_request_header_manipulation`  | URL                                                                                 | `setRequestHeader`, `headers: {…}` values and computed names (inline or by reference), `new Headers({…})`, `x.headers.Name = v`, `x.headers.set`/`append`                                                                        | medium   |
+| `detect_taintwire_document_domain_manipulation` | URL                                                                                 | `document.domain = v`                                                                                                                                                                                                            | medium   |
+| `detect_taintwire_web_message_manipulation`     | URL, name                                                                           | `postMessage` data (including object literal values) or target origin                                                                                                                                                            | medium   |
+| `detect_taintwire_prototype_pollution_url`      | URL, name                                                                           | key of `obj[key][k] = v`, lodash `merge`/`mergeWith`/`defaultsDeep`/`setWith`/`zipObjectDeep`, `deepmerge`, jQuery `$.extend(true, …)`                                                                                           | medium   |
+| `detect_taintwire_unsafe_dynamic_method_call`   | URL, name                                                                           | computed method name in `obj[name](…)`                                                                                                                                                                                           | medium   |
+| `detect_taintwire_xpath_injection`              | URL, name                                                                           | `document.evaluate`, `createExpression`, `selectNodes`/`selectSingleNode`                                                                                                                                                        | medium   |
+| `detect_taintwire_cleartext_password_exposure`  | properties named `password`/`passwd`                                                | cookie and web storage writes, `console` logging, request URLs                                                                                                                                                                   | medium   |
+| `detect_taintwire_dom_clobbering_gadget`        | non-standard `window.X`/`document.X` read with a fallback (`window.CONFIG \|\| {}`) | script, HTML, navigation and URL-attribute sinks                                                                                                                                                                                 | medium   |
+| `detect_taintwire_regex_injection_url`          | URL, name                                                                           | `RegExp()`/`new RegExp()`, `.match`/`.matchAll`/`.search`                                                                                                                                                                        | low      |
+| `detect_taintwire_json_injection_url`           | URL, name                                                                           | `JSON.parse`, `$.parseJSON`                                                                                                                                                                                                      | low      |
+| `detect_taintwire_css_injection_url`            | URL, name                                                                           | `element.style.<property>`, `element.style`, `setProperty`, `insertRule`, `replaceSync`                                                                                                                                          | low      |
+| `detect_taintwire_local_file_path_manipulation` | URL, name                                                                           | `FileReader.readAs*`                                                                                                                                                                                                             | low      |
+| `detect_taintwire_insecure_randomness`          | `Math.random()` (and any call chain on it)                                          | cookie and web storage writes, request headers                                                                                                                                                                                   | low      |
+| `detect_taintwire_incomplete_url_sanitization`  | URL, name                                                                           | value tested with `includes`/`indexOf`/`startsWith`/`endsWith` against a hostname with no boundary (`startsWith('https://example.com')`, `endsWith('example.com')`)                                                              | low      |
+| `detect_taintwire_dom_data_manipulation`        | URL without `href`                                                                  | `history.pushState`/`replaceState` URL, form/link `target`/`method`/`enctype`                                                                                                                                                    | info     |
+
+Not covered by any taintwire rule: values that pass through framework state or routers (React `useState`, Angular `ActivatedRoute`, Vue/Nuxt `useRoute()`, SvelteKit `$page`), Svelte 5 `{@html}` (it compiles to an anonymous helper), mutation XSS after sanitization, and classes with no data flow to follow (UI redressing, CSRF, client-side race conditions).
 
 ---
 
