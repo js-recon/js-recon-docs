@@ -24,7 +24,7 @@ id: <id>
 name: <human_readable_name>
 author: <author>
 description: <description>
-js_recon_version: ">=2.1.0"
+js_recon_version: ">=2.1.0-alpha.2"
 severity: <info | low | medium | high>
 type: taintwire
 tech:
