@@ -153,7 +153,7 @@ _createElementVNode(
     _mergeProps({ class: "comment-content" }, { innerHTML: comment.content }),
     null,
     16,
-    ["innerHTML"],
+    ["innerHTML"]
 );
 ```
 
