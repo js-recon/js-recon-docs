@@ -64,16 +64,19 @@ steps:
 Every step of a `taintwire` rule has a `taintwire` block. Steps run in order:
 
 - Each step runs its `query` and keeps the rows it returns.
-- The `id`s of a step's rows are passed to every later step as the Cypher parameter `$<step name>`, so step names must be made of letters, digits and `_`.
+- The `id`s of a step's rows are passed to every later step as the Cypher parameter `$<step name>`, so step names must be made of letters, digits and `_` (and can't be `__proto__`).
 - A step that returns no rows stops the rule for that graph.
-- The rows of the last step are the findings.
+- The rows of the last step are the findings. Each finding's message is that step's `message`.
+- A step whose `requires` names a step that doesn't come before it gives no findings.
+- If a rule's query fails, the error is printed, the other rules still run, and `analyze`/`run` exit with code `41` after writing their output.
+- Chunks over 8 MB are skipped with a warning.
 
-| Field       | Required | Description                                                                                                                                        |
-| ----------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `query`     | Yes      | A Cypher query, or a list of queries run one after another with their rows concatenated. Each query must return `id`, `file`, `line` and `col`.    |
-| `taintFrom` | No       | Name of an earlier step. Keep only the rows that a value from that step's rows flows into.                                                         |
-| `mode`      | No       | `strict`, `lenient` or `deep` (default). See [Flow modes](#flow-modes).                                                                            |
-| `maxHops`   | No       | Drop flows longer than this many value-flow edges. Long flows usually pass through library code (cookie helpers, routers) and are rarely findings. |
+| Field       | Required | Description                                                                                                                                                      |
+| ----------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `query`     | Yes      | A Cypher query, or a list of queries run one after another with their rows concatenated. Each query must return `id`, `file`, `line` and `col`.                  |
+| `taintFrom` | No       | Name of an earlier step (validation rejects any other name). Keep only the rows that a value from that step's rows flows into.                                   |
+| `mode`      | No       | `strict`, `lenient` or `deep` (default). See [Flow modes](#flow-modes).                                                                                          |
+| `maxHops`   | No       | Drop flows longer than this many value-flow edges (`0` or more). Long flows usually pass through library code (cookie helpers, routers) and are rarely findings. |
 
 ### Using an earlier step's rows
 

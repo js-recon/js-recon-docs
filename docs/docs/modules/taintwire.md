@@ -50,6 +50,7 @@ The command evaluates the `.pgq` files in a sandbox (see below), validates them,
 
 - Exits with code 39 if the PookieGraph doesn't exist.
 - Exits with code 40 if a `.pgq` file is invalid or a query doesn't compile.
+- Exits with code 41 if a rule fails while running. The other rules' findings are still written.
 
 ## taintwire validate
 
