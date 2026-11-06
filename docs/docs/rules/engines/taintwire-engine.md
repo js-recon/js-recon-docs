@@ -8,6 +8,8 @@ The taintwire engine runs rules of type `taintwire`. It loads the chunks in `map
 
 Unlike the [AST engine](./ast-engine.md)'s `taintFrom`, which needs the source and the sink in the same chunk with a direct reference between them, the taintwire engine follows a value through any number of variables and resolved function calls inside a chunk.
 
+To query a whole app with its chunks linked, build a PookieGraph once with [`js-recon taintwire build`](../../modules/taintwire.md) and run `.pgq` query files against it with `taintwire analyze`. Both use the same flow runner as this engine.
+
 taintwire rules are **opt-in**: loading the graphs is slow, so `analyze` and `run` skip them unless you pass `--analyze-taintwire`:
 
 ```bash
