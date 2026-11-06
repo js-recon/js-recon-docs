@@ -4,7 +4,7 @@ sidebar_position: 20
 
 # taintwire command
 
-The `taintwire` command builds a **PookieGraph** (a `.pg` file) from a directory of JavaScript files and runs **pgq** query files against it. A PookieGraph holds the [taintwire](https://taintwire.js-recon.io) graph of every file: the syntax tree, scopes, value flow, and, for webpack and Turbopack builds, the links between chunks through the bundler's module registry. A `.pgq` file is a TypeScript module of Cypher selectors and rules; the [pgq reference](https://taintwire.js-recon.io/next/api/pgq) describes the format. The [taintwire-queries](https://github.com/js-recon/taintwire-queries) repository is the public query pack.
+The `taintwire` command builds a **PookieGraph** (a `.pg` file) from a directory of JavaScript files and runs **pgq** query files against it. A PookieGraph holds the [taintwire](https://taintwire.js-recon.io) graph of every file: the syntax tree, scopes, value flow, and, for webpack and Turbopack builds, the links between chunks through the bundler's module registry. A `.pgq` file is a TypeScript module of Cypher selectors and rules; the [pgq reference](https://taintwire.js-recon.io/next/api/pgq) describes the format. The [taintwire-queries](https://github.com/js-recon/taintwire-queries) repository is the public query pack. Its queries are written with **pga** (PookieGraph aliases), short names such as `${pga.methodCall()}` for the Cypher fragments queries repeat, and share their sinks through sink sets such as `htmlSinks`. The [pga reference](https://taintwire.js-recon.io/next/api/pga) lists every alias, what it expands to, and each sink set.
 
 Build the graph once and query it as often as you like. That differs from `analyze --analyze-taintwire`, which rebuilds small per-chunk graphs on every run and doesn't link chunks.
 
@@ -88,3 +88,5 @@ js-recon taintwire analyze -g example.pg -q taintwire-queries/rules
 ```bash
 js-recon taintwire validate -q my-queries/
 ```
+
+To write your queries with the pga aliases and sink sets, copy `lib/pga.pgq` and `lib/sinks.pgq` from taintwire-queries into your pack (a `.pgq` file can only import files from its own pack), or add your rules to a clone of taintwire-queries. See the [pga reference](https://taintwire.js-recon.io/next/api/pga).
