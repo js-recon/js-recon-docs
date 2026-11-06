@@ -10,7 +10,7 @@ Build the graph once and query it as often as you like. That differs from `analy
 
 It has three subcommands:
 
-| Subcommand           | Purpose                                                               |
+| Command              | Purpose                                                               |
 | -------------------- | --------------------------------------------------------------------- |
 | `taintwire build`    | Load every JS file of a directory into one linked PookieGraph         |
 | `taintwire analyze`  | Run `.pgq` rules against a PookieGraph and write the findings as JSON |
@@ -68,9 +68,9 @@ The command runs the same checks as `analyze`, against an empty graph. It prints
 A `.pgq` file is code. `js-recon` evaluates it in a separate Node.js process under the permission model:
 
 - The process can read only the query pack, which is the nearest folder above the files that has a `package.json`.
-- It can't write files, start processes or load native addons.
+- It can't write files, start processes or load native modules.
 - A `.pgq` file can import only other `.pgq` files from the same pack. Import taintwire's types with `import type`.
-- `fetch` and the other network globals are removed.
+- `fetch`, `WebSocket` and the other network functions are removed.
 
 ## Examples
 
