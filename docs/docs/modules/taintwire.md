@@ -10,11 +10,11 @@ Build the graph once and query it as often as you like. That differs from `analy
 
 It has three subcommands:
 
-| Subcommand | Purpose |
-| --- | --- |
-| `taintwire build` | Load every JS file of a directory into one linked PookieGraph |
-| `taintwire analyze` | Run `.pgq` rules against a PookieGraph and write the findings as JSON |
-| `taintwire validate` | Check `.pgq` files without a graph |
+| Subcommand           | Purpose                                                               |
+| -------------------- | --------------------------------------------------------------------- |
+| `taintwire build`    | Load every JS file of a directory into one linked PookieGraph         |
+| `taintwire analyze`  | Run `.pgq` rules against a PookieGraph and write the findings as JSON |
+| `taintwire validate` | Check `.pgq` files without a graph                                    |
 
 Loading `.pgq` files needs Node.js 22.15 or newer.
 
@@ -24,10 +24,10 @@ Loading `.pgq` files needs Node.js 22.15 or newer.
 js-recon taintwire build -d <directory> [-o graph.pg]
 ```
 
-| Option                | Alias | Description                                                    | Default    | Required |
-| --------------------- | ----- | -------------------------------------------------------------- | ---------- | -------- |
-| `--directory <dir>`   | `-d`  | Directory of JS files, for example lazyload's `output/<host>`. |            | Yes      |
-| `--output <file>`     | `-o`  | PookieGraph file to write.                                     | `graph.pg` | No       |
+| Option              | Alias | Description                                                    | Default    | Required |
+| ------------------- | ----- | -------------------------------------------------------------- | ---------- | -------- |
+| `--directory <dir>` | `-d`  | Directory of JS files, for example lazyload's `output/<host>`. |            | Yes      |
+| `--output <file>`   | `-o`  | PookieGraph file to write.                                     | `graph.pg` | No       |
 
 The command loads every `.js` and `.mjs` file under the directory, recursively, and skips `___subsequent_requests` and any file over 8 MB. The files are loaded in one batch, so a value read through the module registry flows into the chunk that defines it. The graph is written straight to disk, because a whole app held in memory takes about 10 KB of RAM per byte of minified source.
 
@@ -40,11 +40,11 @@ The command loads every `.js` and `.mjs` file under the directory, recursively, 
 js-recon taintwire analyze -g <file.pg> -q <file/dir> [-o taintwire.json]
 ```
 
-| Option                 | Alias | Description                                                 | Default          | Required |
-| ---------------------- | ----- | ----------------------------------------------------------- | ---------------- | -------- |
-| `--graph <file>`       | `-g`  | PookieGraph file built by `taintwire build`.                |                  | Yes      |
+| Option                 | Alias | Description                                                  | Default          | Required |
+| ---------------------- | ----- | ------------------------------------------------------------ | ---------------- | -------- |
+| `--graph <file>`       | `-g`  | PookieGraph file built by `taintwire build`.                 |                  | Yes      |
 | `--queries <file/dir>` | `-q`  | A `.pgq` file, or a directory searched recursively for them. |                  | Yes      |
-| `--output <file>`      | `-o`  | Findings JSON file.                                         | `taintwire.json` | No       |
+| `--output <file>`      | `-o`  | Findings JSON file.                                          | `taintwire.json` | No       |
 
 The command evaluates the `.pgq` files in a sandbox (see below), validates them, and checks that every query compiles. It then opens the PookieGraph read-only and runs the rules. Each finding is printed with its location, the source it came from and the hop count, as with the taintwire engine. The JSON output has the same shape as `analyze.json`, with `ruleType` set to `pgq`.
 
@@ -57,8 +57,8 @@ The command evaluates the `.pgq` files in a sandbox (see below), validates them,
 js-recon taintwire validate -q <file/dir>
 ```
 
-| Option                 | Alias | Description                                                 | Default | Required |
-| ---------------------- | ----- | ----------------------------------------------------------- | ------- | -------- |
+| Option                 | Alias | Description                                                  | Default | Required |
+| ---------------------- | ----- | ------------------------------------------------------------ | ------- | -------- |
 | `--queries <file/dir>` | `-q`  | A `.pgq` file, or a directory searched recursively for them. |         | Yes      |
 
 The command runs the same checks as `analyze`, against an empty graph. It prints every problem, prefixed with the file it's in, and exits with code 40 if there are any.
