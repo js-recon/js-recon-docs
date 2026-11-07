@@ -25,6 +25,7 @@ js-recon analyze [options]
 | `--output <file>`                | `-o`  | Output JSON file name                                                                                           | `analyze.json` | No       |
 | `--determine-compatible-version` |       | Report the `js_recon_version`/`js_recon_max_version` each rule actually requires, based on the features it uses | `false`        | No       |
 | `--apply-compatible-versions`    |       | Same as `--determine-compatible-version`, but rewrites the rule files in place                                  | `false`        | No       |
+| `--analyze-taintwire`            |       | Run [taintwire rules](../rules/engines/taintwire-engine.md) (Cypher taint queries); they're skipped otherwise   | `false`        | No       |
 
 ## Examples
 
@@ -100,7 +101,7 @@ The bundled rules detect both request-level misconfigurations (for example, miss
 | ----------------- | ---------- | --------------------------------------------------------------------------------------------- |
 | `ruleId`          | `string`   | Unique rule identifier from the YAML rule file.                                               |
 | `ruleName`        | `string`   | Human-readable rule name.                                                                     |
-| `ruleType`        | `string`   | Engine that produced the finding: `ast`, `request`, or `cs-mast-s`.                           |
+| `ruleType`        | `string`   | Engine that produced the finding: `ast`, `request`, `cs-mast-s`, or `taintwire`.              |
 | `ruleDescription` | `string`   | Description of what the rule detects.                                                         |
 | `ruleAuthor`      | `string`   | Author of the rule.                                                                           |
 | `ruleTech`        | `string[]` | Technologies the rule targets. Values: `next`, `vue`, `react`, `svelte`, `angular`, or `all`. |
@@ -112,7 +113,7 @@ The bundled rules detect both request-level misconfigurations (for example, miss
 
 The `message` field is a one-line human-readable label:
 
-- **AST and CS-MAST-S rules:** `[+] "<rule name>" found in chunk <chunk id>`
+- **AST, CS-MAST-S and taintwire rules:** `[+] "<rule name>" found in chunk <chunk id>`
 - **Request rules:** `[+] "<rule name>" found in <path> [<METHOD>]`
 
 ### `findingLocation` format
