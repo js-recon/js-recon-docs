@@ -24,12 +24,12 @@ Loading `.pgq` files needs Node.js 22.15 or newer.
 js-recon taintwire build -d <directory> [-o graph.pg]
 ```
 
-| Option              | Alias | Description                                                    | Default    | Required |
-| ------------------- | ----- | -------------------------------------------------------------- | ---------- | -------- |
-| `--directory <dir>` | `-d`  | Directory of JS files, for example lazyload's `output/<host>`. |            | Yes      |
-| `--output <file>`   | `-o`  | PookieGraph file to write: `.pg` for one graph, `.tw` for one graph per unit (see below). | `graph.pg` | No       |
-| `--buffer-pool <MB>` |      | Most memory taintwire's database (Ladybug) may use per graph, in MB. | Half of the container's or machine's memory | No |
-| `--threads <n>`     |       | Query threads per graph.                                       | `2`        | No       |
+| Option               | Alias | Description                                                                               | Default                                     | Required |
+| -------------------- | ----- | ----------------------------------------------------------------------------------------- | ------------------------------------------- | -------- |
+| `--directory <dir>`  | `-d`  | Directory of JS files, for example lazyload's `output/<host>`.                            |                                             | Yes      |
+| `--output <file>`    | `-o`  | PookieGraph file to write: `.pg` for one graph, `.tw` for one graph per unit (see below). | `graph.pg`                                  | No       |
+| `--buffer-pool <MB>` |       | Most memory taintwire's database (Ladybug) may use per graph, in MB.                      | Half of the container's or machine's memory | No       |
+| `--threads <n>`      |       | Query threads per graph.                                                                  | `2`                                         | No       |
 
 The command loads every `.js` and `.mjs` file under the directory, recursively, and skips `___subsequent_requests` and any file over 8 MB. The files are loaded in one batch, so a value read through the module registry flows into the chunk that defines it. The graph is written straight to disk, because a whole app held in memory takes about 10 KB of RAM per byte of minified source.
 
@@ -52,13 +52,13 @@ The database's memory (`--buffer-pool`) defaults to half of what the process may
 js-recon taintwire analyze -g <file.pg|file.tw> -q <file/dir> [-o taintwire.json]
 ```
 
-| Option                 | Alias | Description                                                  | Default          | Required |
-| ---------------------- | ----- | ------------------------------------------------------------ | ---------------- | -------- |
-| `--graph <file>`       | `-g`  | PookieGraph file (`.pg`) or units file (`.tw`) built by `taintwire build`. |                  | Yes      |
-| `--queries <file/dir>` | `-q`  | A `.pgq` file, or a directory searched recursively for them. |                  | Yes      |
-| `--output <file>`      | `-o`  | Findings JSON file.                                          | `taintwire.json` | No       |
-| `--buffer-pool <MB>`   |       | As for `build`.                                              | Half of the container's or machine's memory | No |
-| `--threads <n>`        |       | As for `build`.                                              | `2`              | No       |
+| Option                 | Alias | Description                                                                | Default                                     | Required |
+| ---------------------- | ----- | -------------------------------------------------------------------------- | ------------------------------------------- | -------- |
+| `--graph <file>`       | `-g`  | PookieGraph file (`.pg`) or units file (`.tw`) built by `taintwire build`. |                                             | Yes      |
+| `--queries <file/dir>` | `-q`  | A `.pgq` file, or a directory searched recursively for them.               |                                             | Yes      |
+| `--output <file>`      | `-o`  | Findings JSON file.                                                        | `taintwire.json`                            | No       |
+| `--buffer-pool <MB>`   |       | As for `build`.                                                            | Half of the container's or machine's memory | No       |
+| `--threads <n>`        |       | As for `build`.                                                            | `2`                                         | No       |
 
 The command evaluates the `.pgq` files in a sandbox (see below), validates them, and checks that every query compiles. It then opens the PookieGraph read-only and runs the rules. Each finding is printed with its location, the source it came from and the hop count, as with the taintwire engine. The JSON output has the same shape as `analyze.json`, with `ruleType` set to `pgq`.
 
