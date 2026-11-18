@@ -22,7 +22,7 @@ The `run` command executes a series of modules in sequence, but the exact steps 
 1.  **Endpoints**: Analyzes the JS files and `mapped.json` to identify and list all client-side endpoints.
 1.  **Analyze**: Runs the analyze module to check the code against the rules.
 1.  **Report**: Generates a report based on the results of the analyze module.
-1.  **Refactor** _(optional)_: Detects the bundler via CS-MAST-S signature matching and decompiles the bundle into readable ES modules. See [Refactor integration](#refactor-integration).
+1.  **Refactor** _(optional, `--enable-refactor`)_: Detects the bundler via CS-MAST-S signature matching and decompiles the bundle into readable ES modules. See [Refactor integration](#refactor-integration).
 
 ### React
 
@@ -30,7 +30,7 @@ The `run` command executes a series of modules in sequence, but the exact steps 
 1.  **Map**: Maps functions and API calls; `fetch()` calls are resolved with the same taint-flow analysis used for Next.js.
 1.  **Analyze**: Runs the analyze module to check the code against the rules.
 1.  **Report**: Generates a report based on the results of the analyze module.
-1.  **Refactor** _(optional)_: Detects the bundler (webpack or Vite) via CS-MAST-S signature matching and decompiles the bundle. See [Refactor integration](#refactor-integration).
+1.  **Refactor** _(optional, `--enable-refactor`)_: Detects the bundler (webpack or Vite) via CS-MAST-S signature matching and decompiles the bundle. See [Refactor integration](#refactor-integration).
 
 There's no separate strings/subsequent-request pass for React — a single lazyload covers the bundle, and endpoint extraction isn't yet implemented, so `report` receives an empty endpoints list.
 
@@ -40,7 +40,7 @@ There's no separate strings/subsequent-request pass for React — a single lazyl
 1.  **Map**: Scans the whole download directory for chunks, since Vue builds often spread files across multiple asset hosts, and maps functions and API calls.
 1.  **Analyze**: Runs the analyze module to check the code against the rules.
 1.  **Report**: Generates a report based on the results of the analyze module. Endpoint extraction isn't implemented for Vue yet, so `report` receives an empty endpoints list.
-1.  **Refactor** _(optional)_: Attempts bundler detection (webpack or Vite) via CS-MAST-S signature matching. No signature data is available for Vue yet, so this step is currently skipped with a warning. See [Refactor integration](#refactor-integration).
+1.  **Refactor** _(optional, `--enable-refactor`)_: Attempts bundler detection (webpack or Vite) via CS-MAST-S signature matching. No signature data is available for Vue yet, so this step is currently skipped with a warning. See [Refactor integration](#refactor-integration).
 
 ### Nuxt.js
 
@@ -158,8 +158,8 @@ should be replaced; unowned directories are never recursively cleared.
 | `--include-methods <methods>`         |          | Comma-separated list of lazyload method names to run (whitelist). Only these methods will execute in every lazyload pass; all others are skipped. Use `--list-methods` to see valid names. See [Lazyload Methods](./lazyload/lazyload-methods.md).                                                                                                                                       |                      | No       |
 | `--exclude-methods <methods>`         |          | Comma-separated list of lazyload method names to skip (blacklist). All methods except these will run in every lazyload pass. Use `--list-methods` to see valid names. See [Lazyload Methods](./lazyload/lazyload-methods.md).                                                                                                                                                            |                      | No       |
 | `--list-methods [framework]`          |          | Print all available lazyload method names grouped by framework and exit. Optionally filter by framework (`next_js`, `vue`, `nuxt_js`, `svelte`, `angular`, `react`). Does not require `-u`.                                                                                                                                                                                              |                      | No       |
-| `--cs-mast-tech-detect-threshold <n>` |          | Minimum number of CS-MAST-S signature matches required to detect the bundler and trigger the automatic refactor step. Pass `0` to disable refactor. See [Refactor integration](#refactor-integration).                                                                                                                                                                                   | `50`                 | No       |
-| `--disable-refactor`                  |          | Skip the automatic bundler-detection and refactor step entirely, without needing to touch `--cs-mast-tech-detect-threshold`. See [Refactor integration](#refactor-integration).                                                                                                                                                                                                          | `false`              | No       |
+| `--cs-mast-tech-detect-threshold <n>` |          | Minimum number of CS-MAST-S signature matches required to detect the bundler and trigger the automatic refactor step. Only applies with `--enable-refactor`; pass `0` to skip refactor. See [Refactor integration](#refactor-integration).                                                                                                                                               | `50`                 | No       |
+| `--enable-refactor`                   |          | Run the bundler-detection and refactor step after report. Off by default. See [Refactor integration](#refactor-integration).                                                                                                                                                                                                                                                             | `false`              | No       |
 | `--web-stats-dashboard`               |          | Start a live web dashboard (and REST API) to follow this run's progress instead of relying on console output. See [Web stats dashboard](#web-stats-dashboard).                                                                                                                                                                                                                           | `false`              | No       |
 | `--web-stats-port <port>`             |          | Preferred port for `--web-stats-dashboard`. Increments automatically if the port is already in use.                                                                                                                                                                                                                                                                                      | `6767`               | No       |
 | `--verbose`                           |          | Show detailed file write error messages during the lazyload step (for example, when a downloaded JS chunk fails to write to disk). Suppressed by default to reduce terminal noise.                                                                                                                                                                                                       | `false`              | No       |
@@ -188,11 +188,12 @@ The menu reliably waits for your choice before the process continues or exits �
 
 ## Refactor integration
 
-After the report step, `run` automatically attempts to decompile the target's JavaScript bundle using the [`refactor`](./refactor.md) module — no extra flags needed, since the bundler is detected via CS-MAST-S signature matching. See [Refactor — Automatic detection during `run`](./refactor.md#automatic-detection-during-run) for how detection works and the framework-support matrix.
+The refactor step is off by default. Pass `--enable-refactor` and, after the report step, `run` attempts to decompile the target's JavaScript bundle using the [`refactor`](./refactor.md) module. The bundler is detected via CS-MAST-S signature matching, so no other refactor flags are needed. See [Refactor — Automatic detection during `run`](./refactor.md#automatic-detection-during-run) for how detection works and the framework-support matrix.
 
-This flag controls the step:
+These flags control the step:
 
-- `--cs-mast-tech-detect-threshold <n>` (default `50`) sets the minimum signature-match count required to trigger refactor; pass `0` to disable it.
+- `--enable-refactor` turns the step on.
+- `--cs-mast-tech-detect-threshold <n>` (default `50`) sets the minimum signature-match count required to trigger refactor; pass `0` to skip it.
 
 Refactored files are written to `refactored/` in the current working directory (single-URL mode) or `<workingDir>/refactored/` alongside `mapped.json` for each target (batch mode). Any existing `refactored/` directory is deleted before writing.
 

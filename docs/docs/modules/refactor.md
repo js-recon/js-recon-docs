@@ -90,7 +90,7 @@ For detailed, technology-specific documentation see:
 
 ## Automatic detection during `run`
 
-The [`run`](./run.md) command can invoke this module automatically, without any refactor-specific flags, by detecting the bundler via CS-MAST-S signature matching. See [`run` — Refactor integration](./run.md#refactor-integration) for the user-facing flag (`--cs-mast-tech-detect-threshold`) and output locations.
+With `--enable-refactor`, the [`run`](./run.md) command invokes this module automatically by detecting the bundler via CS-MAST-S signature matching. See [`run` — Refactor integration](./run.md#refactor-integration) for the user-facing flags (`--enable-refactor`, `--cs-mast-tech-detect-threshold`) and output locations.
 
 ### How bundler detection works
 
