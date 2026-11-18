@@ -49,16 +49,19 @@ The database's memory (`--buffer-pool`) defaults to half of what the process may
 ## taintwire analyze
 
 ```bash
-js-recon taintwire analyze -g <file.pg|file.tw> -q <file/dir> [-o taintwire.json]
+js-recon taintwire analyze -g <file.pg|file.tw> [-q <file/dir>] [-o taintwire.json]
 ```
 
-| Option                 | Alias | Description                                                                | Default                                     | Required |
-| ---------------------- | ----- | -------------------------------------------------------------------------- | ------------------------------------------- | -------- |
-| `--graph <file>`       | `-g`  | PookieGraph file (`.pg`) or units file (`.tw`) built by `taintwire build`. |                                             | Yes      |
-| `--queries <file/dir>` | `-q`  | A `.pgq` file, or a directory searched recursively for them.               |                                             | Yes      |
-| `--output <file>`      | `-o`  | Findings JSON file.                                                        | `taintwire.json`                            | No       |
-| `--buffer-pool <MB>`   |       | As for `build`.                                                            | Half of the container's or machine's memory | No       |
-| `--threads <n>`        |       | As for `build`.                                                            | `2`                                         | No       |
+| Option                          | Alias | Description                                                                        | Default                                     | Required |
+| ------------------------------- | ----- | ---------------------------------------------------------------------------------- | ------------------------------------------- | -------- |
+| `--graph <file>`                | `-g`  | PookieGraph file (`.pg`) or units file (`.tw`) built by `taintwire build`.         |                                             | Yes      |
+| `--queries <file/dir>`          | `-q`  | A `.pgq` file, or a directory searched recursively for them.                       | `~/.js-recon/taintwire-queries/rules`       | No       |
+| `--output <file>`               | `-o`  | Findings JSON file.                                                                | `taintwire.json`                            | No       |
+| `--disable-rules-version-check` |       | Use the cached taintwire-queries pack without checking GitHub for a newer release. | `false`                                     | No       |
+| `--buffer-pool <MB>`            |       | As for `build`.                                                                    | Half of the container's or machine's memory | No       |
+| `--threads <n>`                 |       | As for `build`.                                                                    | `2`                                         | No       |
+
+Without `-q`, the command uses the [taintwire-queries](https://github.com/js-recon/taintwire-queries) pack. It downloads the pack's latest release to `~/.js-recon/taintwire-queries` the first time it runs. On later runs, it downloads the pack again when the `version.txt` there doesn't match the latest release, the same way `analyze` keeps `~/.js-recon/rules` up to date. `--disable-rules-version-check`, or the `JS_RECON_DISABLE_RULES_VERSION_CHECK=true` environment variable, skips that check once the pack is cached. The `-w-rules` Docker images ship the pack and set that variable, so they run without downloading it.
 
 The command evaluates the `.pgq` files in a sandbox (see below), validates them, and checks that every query compiles. It then opens the PookieGraph read-only and runs the rules. Each finding is printed with its location, the source it came from and the hop count, as with the taintwire engine. The JSON output has the same shape as `analyze.json`, with `ruleType` set to `pgq`.
 
@@ -94,8 +97,7 @@ A `.pgq` file is code. `js-recon` evaluates it in a separate Node.js process und
 ```bash
 js-recon lazyload -u https://example.com
 js-recon taintwire build -d output/example.com -o example.pg
-git clone https://github.com/js-recon/taintwire-queries
-js-recon taintwire analyze -g example.pg -q taintwire-queries/rules
+js-recon taintwire analyze -g example.pg
 ```
 
 ### Check your own queries
