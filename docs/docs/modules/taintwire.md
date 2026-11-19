@@ -10,11 +10,11 @@ Build the graph once and query it as often as you like. That differs from `analy
 
 It has three subcommands:
 
-| Command              | Purpose                                                               |
-| -------------------- | --------------------------------------------------------------------- |
-| `taintwire build`    | Load every JS file of a directory into one linked PookieGraph         |
-| `taintwire analyze`  | Run `.pgq` rules against a PookieGraph and write the findings as JSON |
-| `taintwire validate` | Check `.pgq` files without a graph                                    |
+| Command              | Purpose                                                                |
+| -------------------- | ---------------------------------------------------------------------- |
+| `taintwire build`    | Load every JS file of a directory into one linked PookieGraph          |
+| `taintwire analyze`  | Run `.pgq` rules against a PookieGraph and write the findings as SARIF |
+| `taintwire validate` | Check `.pgq` files without a graph                                     |
 
 Loading `.pgq` files needs Node.js 22.15 or newer.
 
@@ -49,21 +49,60 @@ The database's memory (`--buffer-pool`) defaults to half of what the process may
 ## taintwire analyze
 
 ```bash
-js-recon taintwire analyze -g <file.pg|file.tw> [-q <file/dir>] [-o taintwire.json]
+js-recon taintwire analyze -g <file.pg|file.tw> [-q <file/dir>] [-o taintwire.sarif]
 ```
 
 | Option                          | Alias | Description                                                                        | Default                                     | Required |
 | ------------------------------- | ----- | ---------------------------------------------------------------------------------- | ------------------------------------------- | -------- |
 | `--graph <file>`                | `-g`  | PookieGraph file (`.pg`) or units file (`.tw`) built by `taintwire build`.         |                                             | Yes      |
 | `--queries <file/dir>`          | `-q`  | A `.pgq` file, or a directory searched recursively for them.                       | `~/.js-recon/taintwire-queries/rules`       | No       |
-| `--output <file>`               | `-o`  | Findings JSON file.                                                                | `taintwire.json`                            | No       |
+| `--output <file>`               | `-o`  | Findings file, in SARIF 2.1.0 format.                                              | `taintwire.sarif`                           | No       |
 | `--disable-rules-version-check` |       | Use the cached taintwire-queries pack without checking GitHub for a newer release. | `false`                                     | No       |
 | `--buffer-pool <MB>`            |       | As for `build`.                                                                    | Half of the container's or machine's memory | No       |
 | `--threads <n>`                 |       | As for `build`.                                                                    | `2`                                         | No       |
 
 Without `-q`, the command uses the [taintwire-queries](https://github.com/js-recon/taintwire-queries) pack. It downloads the pack's latest release to `~/.js-recon/taintwire-queries` the first time it runs. On later runs, it downloads the pack again when the `version.txt` there doesn't match the latest release, the same way `analyze` keeps `~/.js-recon/rules` up to date. `--disable-rules-version-check`, or the `JS_RECON_DISABLE_RULES_VERSION_CHECK=true` environment variable, skips that check once the pack is cached. The `-w-rules` Docker images ship the pack and set that variable, so they run without downloading it.
 
-The command evaluates the `.pgq` files in a sandbox (see below), validates them, and checks that every query compiles. It then opens the PookieGraph read-only and runs the rules. Each finding is printed with its location, the source it came from and the hop count, as with the taintwire engine. The JSON output has the same shape as `analyze.json`, with `ruleType` set to `pgq`.
+The command evaluates the `.pgq` files in a sandbox (see below), validates them, and checks that every query compiles. It then opens the PookieGraph read-only and runs the rules. Each finding is printed with its location, the source it came from and the hop count, as with the taintwire engine. The findings file is a [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html) log, so GitHub code scanning, the VS Code SARIF Viewer and other SARIF tools can read it.
+
+- `runs[0].tool.driver.rules` lists every rule that ran, with its `id`, `name`, description and severity.
+- Each entry of `runs[0].results` is one finding. `ruleId` names the rule and `message.text` is the rule's message.
+- `level` comes from the rule's severity: `critical` and `high` become `error`, `medium` becomes `warning`, and `low` and `info` become `note`. `properties.severity` keeps the original value.
+- `locations[0]` is the sink. Its `region.snippet.text` holds up to 300 characters of the sink's code.
+- When a rule follows a flow, `relatedLocations[0]` is the source and `codeFlows` lists the source and then the sink. `properties.hops` is the length of the flow.
+- `startLine` and `startColumn` start at 1. The console output counts columns from 0, so it shows each column as one less than the SARIF file.
+
+```json
+{
+    "ruleId": "dom_xss_url",
+    "level": "error",
+    "message": { "text": "URL-derived value reaches an HTML sink" },
+    "locations": [
+        {
+            "physicalLocation": {
+                "artifactLocation": { "uri": "a.js" },
+                "region": {
+                    "startLine": 1,
+                    "startColumn": 52,
+                    "snippet": { "text": "h" }
+                }
+            }
+        }
+    ],
+    "relatedLocations": [
+        {
+            "id": 1,
+            "message": { "text": "source" },
+            "physicalLocation": {
+                "artifactLocation": { "uri": "a.js" },
+                "region": { "startLine": 1, "startColumn": 11 }
+            }
+        }
+    ],
+    "codeFlows": ["..."],
+    "properties": { "severity": "high", "hops": 2 }
+}
+```
 
 - Exits with code 39 if the PookieGraph doesn't exist, or if a `.tw` file's `manifest.json` is missing, malformed or lists no graphs.
 - Exits with code 40 if a `.pgq` file is invalid or a query doesn't compile.
