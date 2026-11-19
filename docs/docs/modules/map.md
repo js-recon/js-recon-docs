@@ -33,7 +33,7 @@ js-recon map -d <directory> -t <technology> [options]
 | `--openapi-output <file>`   |          | Output file for OpenAPI spec                                                                                                                                                                                                                                          | `mapped-openapi.json` | No       |
 | `--openapi-chunk-tag`       |          | Add chunk ID tag to OpenAPI spec for each request found                                                                                                                                                                                                               | `false`               | No       |
 | `--no-graphql`              | `--ngql` | Disable GraphQL operation extraction during OpenAPI generation                                                                                                                                                                                                        | enabled               | No       |
-| `--map-taintwire`           |          | Resolve API calls with taintwire (Cypher queries over the code graph) instead of the Babel resolvers. Implemented for `react`; other techs fall back to the Babel resolvers                                                                                           | `false`               | No       |
+| `--map-taintwire`           |          | Resolve API calls with taintwire (Cypher queries over the code graph) instead of the Babel resolvers, for every tech                                                                                                                                                  | `false`               | No       |
 | `--max-recursion-depth <n>` |          | Max recursion depth for HTTP-client URL fan-out and cross-file resolution.                                                                                                                                                                                            | `3`                   | No       |
 | `--max-heap <mb>`           |          | Cap the V8 heap in MB before any parsing work starts. `0` sets the limit to 100% of available RAM (`os.totalmem()`); any positive integer sets an explicit ceiling. Applied via process re-exec so the limit is effective regardless of how the process was launched. | `0`                   | No       |
 
@@ -85,7 +85,7 @@ This scan is independent of the URL/transport resolvers — it does not require 
 
 ### taintwire resolution (`--map-taintwire`)
 
-`--map-taintwire` switches API call resolution to [taintwire](https://taintwire.js-recon.io), for every tech. taintwire loads each JS file (for Next.js, each webpack or Turbopack module) into a graph of its syntax tree, scopes and value flow, and `map` finds the calls with Cypher queries:
+`--map-taintwire` switches API call resolution to [taintwire](https://taintwire.js-recon.io), for every tech. taintwire loads every JS file in the directory (for Next.js, every chunk file) into one graph of their syntax trees, scopes and value flow, linked across files: through the webpack and Turbopack module registries, and through native ES `import`/`export` between Vite, Rollup, esbuild and Nuxt chunks. `map` then finds the calls with Cypher queries:
 
 - `fetch(...)` and `$fetch(...)`, including aliases such as `const f = fetch`
 - a `fetch` passed in by destructuring, such as SvelteKit's `load({ fetch })`
@@ -95,13 +95,13 @@ This scan is independent of the URL/transport resolvers — it does not require 
 - config objects: `axios({ url, method })`, `$.ajax({ url, type })`, `new X({ url, method })`
 - Next.js Server Actions (`createServerReference(...)`)
 
-For each call, it follows the value flow back to the URL, method, headers and body. It joins strings, template literals and `.concat()` calls, takes both sides of a `? :` or `||`, and follows a local wrapper function to each of its callers, so a wrapper called with two paths gives both URLs. Values it can't resolve stay as placeholders, which the OpenAPI output turns into path parameters. The Babel resolvers remain the default. GraphQL extraction and interactive mode are the same in both modes.
+For each call, it follows the value flow back to the URL, method, headers and body. It joins strings, template literals and `.concat()` calls, takes both sides of a `? :` or `||`, and follows a wrapper function to each of its callers, also when the wrapper is in another chunk, so a wrapper called with two paths gives both URLs. It reads values out of destructuring, object and array literals, and React hooks: `useState` (including values set through its setter), `useReducer`, `useRef`, `useMemo` and `useContext`. Values it can't resolve stay as placeholders, which the OpenAPI output turns into path parameters. The Babel resolvers remain the default. GraphQL extraction and interactive mode are the same in both modes.
 
 ```bash
 js-recon map -d /path/to/js-files -t react --openapi --map-taintwire
 ```
 
-taintwire doesn't yet follow values across files, through object properties, or through webpack module exports, so wrappers and axios instances exported from another file or chunk stay unresolved, and Server Action arguments are only filled in when the action is called from the same module. Building the graph is slow: expect `map` to take 5 to 20 times longer than with the Babel resolvers.
+taintwire doesn't follow values written into object properties (`obj.url = x`), reducer state after a dispatch, `ref.current` writes, or state kept in stores. Values from those stay placeholders. Every file is loaded and linked, framework and vendor chunks included, so the graph is slow to build: expect `map` to take 10 to 20 times longer than with the Babel resolvers.
 
 ### Limitations
 
