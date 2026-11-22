@@ -151,6 +151,11 @@ capped by `--max-pages`, downloading JS incrementally as each page is visited.
   `<link rel="modulepreload">` the same way the framework-specific crawlers do — decoding `data:` URI
   script sources and skipping `<script type="...">` values that indicate non-JS content (for example
   `application/ld+json`, `speculationrules`).
+- **Attribute scripts:** JS that runs from an attribute is saved next to the page's inline scripts.
+  Each event-handler attribute (any attribute starting with `on`, such as `onerror`, `onclick` or
+  `onload`) is saved as `<attribute>-N.js`, for example `onerror-1.js`. Each `javascript:` URL in an
+  attribute is saved as `javascript-N.js`. Numbering is per attribute name per page, and a body that
+  repeats on the same page is saved only once.
 - **Attribute-embedded JS:** every HTML attribute value is also walked and resolved with the `URL`
   constructor. Any URL whose path segment ends in `.js` (including cachebuster-suffixed paths like
   `.../beacon.min.js/v124/token` that don't literally end in `.js`) is confirmed as real JavaScript via
