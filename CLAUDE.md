@@ -88,6 +88,10 @@ docs/
     ├── react/                    (category pos 3)
     │   └── recovering-source-from-bundled-react.md (pos 1)
     └── sharing_projects.md       (pos 4)
+
+benchmarks/                       ← Separate unversioned docs plugin (id "benchmarks", /benchmarks)
+└── taintwire/                    (category pos 1)
+    └── portswigger_dom_labs.md   (pos 1)
 ```
 
 ## Module ordering rationale
