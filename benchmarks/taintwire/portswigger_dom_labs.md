@@ -67,7 +67,7 @@ window.addEventListener('message', function (e) {
 }, false);
 ```
 
-### DOM XSS using web messages and `JSON.parse`
+## DOM XSS using web messages and `JSON.parse`
 
 Lab
 URL: https://portswigger.net/web-security/dom-based/controlling-the-web-message-source/lab-dom-xss-using-web-messages-and-json-parse
@@ -110,7 +110,7 @@ window.addEventListener('message', function (e) {
 }, false);
 ```
 
-### DOM-based open redirection
+## DOM-based open redirection
 
 Lab URL: https://portswigger.net/web-security/dom-based/open-redirection/lab-dom-open-redirection
 
@@ -133,7 +133,7 @@ returnUrl = /url=(https?:\/\/.+)/.exec(location);
 location.href = returnUrl ? returnUrl[1] : "/"
 ```
 
-### DOM-based cookie manipulation
+## DOM-based cookie manipulation
 
 Lab URL: https://portswigger.net/web-security/dom-based/cookie-manipulation/lab-dom-cookie-manipulation
 
@@ -154,7 +154,7 @@ The flagged JS portion, and surrounding logic:
 document.cookie = 'lastViewedProduct=' + window.location + '; SameSite=None; Secure'
 ```
 
-### Exploiting DOM clobbering to enable XSS
+## Exploiting DOM clobbering to enable XSS
 
 Lab URL: https://portswigger.net/web-security/dom-based/dom-clobbering/lab-dom-xss-exploiting-dom-clobbering
 
@@ -176,7 +176,7 @@ let divImgContainer = document.createElement("div");
 divImgContainer.innerHTML = avatarImgHTML
 ```
 
-### Clobbering DOM attributes to bypass HTML filters
+## Clobbering DOM attributes to bypass HTML filters
 
 Lab URL:
 
