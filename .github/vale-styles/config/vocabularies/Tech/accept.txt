@@ -140,3 +140,4 @@ unconfigured
 [Pp]gq
 [Pp]ga
 [Rr]ollup
+unminified
