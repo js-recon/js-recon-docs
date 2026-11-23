@@ -10,11 +10,11 @@ Build the graph once and query it as often as you like. That differs from `analy
 
 It has three subcommands:
 
-| Command              | Purpose                                                                |
-| -------------------- | ---------------------------------------------------------------------- |
-| `taintwire build`    | Load every JS file of a directory into one linked PookieGraph          |
-| `taintwire analyze`  | Run `.pgq` rules against a PookieGraph and write the findings          |
-| `taintwire validate` | Check `.pgq` files without a graph                                     |
+| Command              | Purpose                                                       |
+| -------------------- | ------------------------------------------------------------- |
+| `taintwire build`    | Load every JS file of a directory into one linked PookieGraph |
+| `taintwire analyze`  | Run `.pgq` rules against a PookieGraph and write the findings |
+| `taintwire validate` | Check `.pgq` files without a graph                            |
 
 Loading `.pgq` files needs Node.js 22.15 or newer.
 

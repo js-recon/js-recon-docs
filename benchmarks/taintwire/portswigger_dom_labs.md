@@ -34,9 +34,9 @@ e.data
 The flagged JS portion, and surrounding logic:
 
 ```js
-window.addEventListener('message', function (e) {
-    document.getElementById('ads').innerHTML = e.data;
-})
+window.addEventListener("message", function (e) {
+    document.getElementById("ads").innerHTML = e.data;
+});
 ```
 
 ## DOM XSS using web messages and a JavaScript URL
@@ -87,27 +87,33 @@ d.url
 The flagged JS portion, and surrounding logic:
 
 ```js
-window.addEventListener('message', function (e) {
-    var iframe = document.createElement('iframe'), ACMEplayer = {element: iframe}, d;
-    document.body.appendChild(iframe);
-    try {
-        d = JSON.parse(e.data);
-    } catch (e) {
-        return;
-    }
-    switch (d.type) {
-        case "page-load":
-            ACMEplayer.element.scrollIntoView();
-            break;
-        case "load-channel":
-            ACMEplayer.element.src = d.url;
-            break;
-        case "player-height-changed":
-            ACMEplayer.element.style.width = d.width + "px";
-            ACMEplayer.element.style.height = d.height + "px";
-            break;
-    }
-}, false);
+window.addEventListener(
+    "message",
+    function (e) {
+        var iframe = document.createElement("iframe"),
+            ACMEplayer = { element: iframe },
+            d;
+        document.body.appendChild(iframe);
+        try {
+            d = JSON.parse(e.data);
+        } catch (e) {
+            return;
+        }
+        switch (d.type) {
+            case "page-load":
+                ACMEplayer.element.scrollIntoView();
+                break;
+            case "load-channel":
+                ACMEplayer.element.src = d.url;
+                break;
+            case "player-height-changed":
+                ACMEplayer.element.style.width = d.width + "px";
+                ACMEplayer.element.style.height = d.height + "px";
+                break;
+        }
+    },
+    false
+);
 ```
 
 ## DOM-based open redirection
@@ -130,7 +136,7 @@ The flagged JS portion, and surrounding logic:
 
 ```js
 returnUrl = /url=(https?:\/\/.+)/.exec(location);
-location.href = returnUrl ? returnUrl[1] : "/"
+location.href = returnUrl ? returnUrl[1] : "/";
 ```
 
 ## DOM-based cookie manipulation
@@ -151,7 +157,8 @@ Evidence:
 The flagged JS portion, and surrounding logic:
 
 ```js
-document.cookie = 'lastViewedProduct=' + window.location + '; SameSite=None; Secure'
+document.cookie =
+    "lastViewedProduct=" + window.location + "; SameSite=None; Secure";
 ```
 
 ## Exploiting DOM clobbering to enable XSS
@@ -169,11 +176,16 @@ avatarImgHTML
 The flagged JS portion, and surrounding logic:
 
 ```js
-let defaultAvatar = window.defaultAvatar || {avatar: '/resources/images/avatarDefault.svg'}
-let avatarImgHTML = '<img class="avatar" src="' + (comment.avatar ? escapeHTML(comment.avatar) : defaultAvatar.avatar) + '">';
+let defaultAvatar = window.defaultAvatar || {
+    avatar: "/resources/images/avatarDefault.svg",
+};
+let avatarImgHTML =
+    '<img class="avatar" src="' +
+    (comment.avatar ? escapeHTML(comment.avatar) : defaultAvatar.avatar) +
+    '">';
 
 let divImgContainer = document.createElement("div");
-divImgContainer.innerHTML = avatarImgHTML
+divImgContainer.innerHTML = avatarImgHTML;
 ```
 
 ## Clobbering DOM attributes to bypass HTML filters
@@ -224,11 +236,10 @@ function displayComments(comments) {
     }
 }
 
-xhr.onreadystatechange = function() {
+xhr.onreadystatechange = function () {
     if (this.readyState == 4 && this.status == 200) {
         let comments = JSON.parse(this.responseText);
         displayComments(comments);
     }
 };
 ```
-
