@@ -56,6 +56,19 @@ const config: Config = {
         ],
     ],
 
+    plugins: [
+        [
+            "@docusaurus/plugin-content-docs",
+            {
+                id: "benchmarks",
+                path: "benchmarks",
+                routeBasePath: "benchmarks",
+                sidebarPath: "./sidebars-benchmarks.ts",
+                editUrl: "https://github.com/js-recon/js-recon-docs/edit/main/",
+            },
+        ],
+    ],
+
     headTags: [
         {
             // Hide a dismissed research bar before first paint (see src/theme/AnnouncementBar)
@@ -93,6 +106,13 @@ const config: Config = {
                     sidebarId: "guidesSidebar",
                     position: "left",
                     label: "Guides",
+                },
+                {
+                    type: "docSidebar",
+                    docsPluginId: "benchmarks",
+                    sidebarId: "benchmarksSidebar",
+                    position: "left",
+                    label: "Benchmarks",
                 },
                 {
                     href: "/research",

@@ -1,0 +1,8 @@
+{
+    "label": "Taintwire",
+    "position": 1,
+    "link": {
+        "type": "generated-index",
+        "description": "Benchmarks of the JS Recon taintwire engine"
+    }
+}

@@ -14,18 +14,19 @@ js-recon analyze [options]
 
 ## Options
 
-| Option                           | Alias | Description                                                                                                     | Default        | Required |
-| -------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------- | -------------- | -------- |
-| `--rules <file/dir>`             | `-r`  | Rules file or directory                                                                                         |                | No       |
-| `--mapped-json <file>`           | `-m`  | Mapped JSON file                                                                                                | `mapped.json`  | No       |
-| `--tech <tech>`                  | `-t`  | Technology used in the JS files (run with -l/--list to see available options)                                   |                | No       |
-| `--openapi <file>`               |       | Path to OpenAPI spec file                                                                                       |                | No       |
-| `--list`                         | `-l`  | List available technologies                                                                                     | `false`        | No       |
-| `--validate`                     |       | Validate the rules                                                                                              | `false`        | No       |
-| `--output <file>`                | `-o`  | Output JSON file name                                                                                           | `analyze.json` | No       |
-| `--determine-compatible-version` |       | Report the `js_recon_version`/`js_recon_max_version` each rule actually requires, based on the features it uses | `false`        | No       |
-| `--apply-compatible-versions`    |       | Same as `--determine-compatible-version`, but rewrites the rule files in place                                  | `false`        | No       |
-| `--analyze-taintwire`            |       | Run [taintwire rules](../rules/engines/taintwire-engine.md) (Cypher taint queries); they're skipped otherwise   | `false`        | No       |
+| Option                           | Alias | Description                                                                                                                                                                                   | Default        | Required |
+| -------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | -------- |
+| `--rules <file/dir>`             | `-r`  | Rules file or directory                                                                                                                                                                       |                | No       |
+| `--mapped-json <file>`           | `-m`  | Mapped JSON file                                                                                                                                                                              | `mapped.json`  | No       |
+| `--tech <tech>`                  | `-t`  | Technology used in the JS files (run with -l/--list to see available options)                                                                                                                 |                | No       |
+| `--openapi <file>`               |       | Path to OpenAPI spec file                                                                                                                                                                     |                | No       |
+| `--list`                         | `-l`  | List available technologies                                                                                                                                                                   | `false`        | No       |
+| `--validate`                     |       | Validate the rules                                                                                                                                                                            | `false`        | No       |
+| `--output <file>`                | `-o`  | Output JSON file name                                                                                                                                                                         | `analyze.json` | No       |
+| `--determine-compatible-version` |       | Report the `js_recon_version`/`js_recon_max_version` each rule actually requires, based on the features it uses                                                                               | `false`        | No       |
+| `--apply-compatible-versions`    |       | Same as `--determine-compatible-version`, but rewrites the rule files in place                                                                                                                | `false`        | No       |
+| `--analyze-taintwire`            |       | Run [taintwire rules](../rules/engines/taintwire-engine.md) (Cypher taint queries); they're skipped otherwise                                                                                 | `false`        | No       |
+| `--taintwire-include-vendor`     |       | Also run taintwire rules on known vendor library files (React, ReactDOM, AngularJS, jQuery, Vue, lodash, moment builds). They're skipped by default because they're slow and hold no app code | `false`        | No       |
 
 ## Examples
 

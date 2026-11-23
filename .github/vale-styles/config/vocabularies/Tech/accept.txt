@@ -139,3 +139,5 @@ unconfigured
 [Tt]aintwire
 [Pp]gq
 [Pp]ga
+[Rr]ollup
+unminified

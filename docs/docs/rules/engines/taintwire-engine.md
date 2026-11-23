@@ -19,6 +19,10 @@ js-recon run -u https://example.com --analyze-taintwire
 
 Without the flag, `analyze` prints `Skipped N taintwire rule(s)` and runs everything else as usual.
 
+Known vendor library files are skipped: React, ReactDOM, AngularJS, jQuery, Vue, lodash and moment builds, matched by file name or license banner. On sites without a bundler these are large unminified files, a single rule can take minutes on them, and they hold no app code. `analyze` prints `Skipped N vendor chunk(s) for taintwire (...)`. Pass `--taintwire-include-vendor` to scan them anyway.
+
+While the rules run, `analyze` prints each graph it loads and one line per rule with its findings and time. It rewrites the output file after every rule, so a run that you stop or that times out still leaves the findings it reached.
+
 ## Rule header
 
 ```yaml

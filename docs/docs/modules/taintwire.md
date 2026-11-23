@@ -10,11 +10,11 @@ Build the graph once and query it as often as you like. That differs from `analy
 
 It has three subcommands:
 
-| Command              | Purpose                                                               |
-| -------------------- | --------------------------------------------------------------------- |
-| `taintwire build`    | Load every JS file of a directory into one linked PookieGraph         |
-| `taintwire analyze`  | Run `.pgq` rules against a PookieGraph and write the findings as JSON |
-| `taintwire validate` | Check `.pgq` files without a graph                                    |
+| Command              | Purpose                                                       |
+| -------------------- | ------------------------------------------------------------- |
+| `taintwire build`    | Load every JS file of a directory into one linked PookieGraph |
+| `taintwire analyze`  | Run `.pgq` rules against a PookieGraph and write the findings |
+| `taintwire validate` | Check `.pgq` files without a graph                            |
 
 Loading `.pgq` files needs Node.js 22.15 or newer.
 
@@ -49,18 +49,82 @@ The database's memory (`--buffer-pool`) defaults to half of what the process may
 ## taintwire analyze
 
 ```bash
-js-recon taintwire analyze -g <file.pg|file.tw> -q <file/dir> [-o taintwire.json]
+js-recon taintwire analyze -g <file.pg|file.tw> [-q <file/dir>] [--output-json taintwire.json] [--output-sarif <file>]
 ```
 
-| Option                 | Alias | Description                                                                | Default                                     | Required |
-| ---------------------- | ----- | -------------------------------------------------------------------------- | ------------------------------------------- | -------- |
-| `--graph <file>`       | `-g`  | PookieGraph file (`.pg`) or units file (`.tw`) built by `taintwire build`. |                                             | Yes      |
-| `--queries <file/dir>` | `-q`  | A `.pgq` file, or a directory searched recursively for them.               |                                             | Yes      |
-| `--output <file>`      | `-o`  | Findings JSON file.                                                        | `taintwire.json`                            | No       |
-| `--buffer-pool <MB>`   |       | As for `build`.                                                            | Half of the container's or machine's memory | No       |
-| `--threads <n>`        |       | As for `build`.                                                            | `2`                                         | No       |
+| Option                          | Alias | Description                                                                        | Default                                     | Required |
+| ------------------------------- | ----- | ---------------------------------------------------------------------------------- | ------------------------------------------- | -------- |
+| `--graph <file>`                | `-g`  | PookieGraph file (`.pg`) or units file (`.tw`) built by `taintwire build`.         |                                             | Yes      |
+| `--queries <file/dir>`          | `-q`  | A `.pgq` file, or a directory searched recursively for them.                       | `~/.js-recon/taintwire-queries/rules`       | No       |
+| `--output-json <file>`          |       | Findings file, in the `analyze.json` format.                                       | `taintwire.json`                            | No       |
+| `--output-sarif <file>`         |       | Also write the findings to this file, in SARIF 2.1.0 format.                       |                                             | No       |
+| `--disable-rules-version-check` |       | Use the cached taintwire-queries pack without checking GitHub for a newer release. | `false`                                     | No       |
+| `--buffer-pool <MB>`            |       | As for `build`.                                                                    | Half of the container's or machine's memory | No       |
+| `--threads <n>`                 |       | As for `build`.                                                                    | `2`                                         | No       |
 
-The command evaluates the `.pgq` files in a sandbox (see below), validates them, and checks that every query compiles. It then opens the PookieGraph read-only and runs the rules. Each finding is printed with its location, the source it came from and the hop count, as with the taintwire engine. The JSON output has the same shape as `analyze.json`, with `ruleType` set to `pgq`.
+Without `-q`, the command uses the [taintwire-queries](https://github.com/js-recon/taintwire-queries) pack. It downloads the pack's latest release to `~/.js-recon/taintwire-queries` the first time it runs. On later runs, it downloads the pack again when the `version.txt` there doesn't match the latest release, the same way `analyze` keeps `~/.js-recon/rules` up to date. `--disable-rules-version-check`, or the `JS_RECON_DISABLE_RULES_VERSION_CHECK=true` environment variable, skips that check once the pack is cached. The `-w-rules` Docker images ship the pack and set that variable, so they run without downloading it.
+
+The command evaluates the `.pgq` files in a sandbox (see below), validates them, and checks that every query compiles. It then opens the PookieGraph read-only and runs the rules. Each finding is printed with its location, the source it came from and the hop count, as with the taintwire engine. When a rule's sink lists interceptors (see [Conditions before the sink](#conditions-before-the-sink)), the conditions found are printed below it.
+
+The findings are always written to `--output-json` (`taintwire.json`), in the same format as `analyze.json`. With `--output-sarif <file>`, they are also written to that file as a [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html) log, which GitHub code scanning, the VS Code SARIF Viewer and other SARIF tools can read.
+
+In the SARIF file:
+
+- `runs[0].tool.driver.rules` lists every rule that ran, with its `id`, `name`, description and severity.
+- Each entry of `runs[0].results` is one finding. `ruleId` names the rule and `message.text` is the rule's message.
+- `level` comes from the rule's severity: `critical` and `high` become `error`, `medium` becomes `warning`, and `low` and `info` become `note`. `properties.severity` keeps the original value.
+- `locations[0]` is the sink. Its `region.snippet.text` holds up to 300 characters of the sink's code.
+- When a rule follows a flow, `relatedLocations[0]` is the source and `codeFlows` lists the source and then the sink. `properties.hops` is the length of the flow.
+- Each interceptor is one more related location (`id` 2 and up), with a message such as `if, must be true` or `check: contains "http:"`. A guard is also a step of the code flow between source and sink, with `kinds: ["branch"]`. `properties.interceptors` lists them all with `kind`, `text`, `file`, `line`, `column` and `code`.
+- `startLine` and `startColumn` start at 1. The console output counts columns from 0, so it shows each column as one less than the SARIF file.
+
+```json
+{
+    "ruleId": "dom_xss_url",
+    "level": "error",
+    "message": { "text": "URL-derived value reaches an HTML sink" },
+    "locations": [
+        {
+            "physicalLocation": {
+                "artifactLocation": { "uri": "a.js" },
+                "region": {
+                    "startLine": 1,
+                    "startColumn": 52,
+                    "snippet": { "text": "h" }
+                }
+            }
+        }
+    ],
+    "relatedLocations": [
+        {
+            "id": 1,
+            "message": { "text": "source" },
+            "physicalLocation": {
+                "artifactLocation": { "uri": "a.js" },
+                "region": { "startLine": 1, "startColumn": 11 }
+            }
+        }
+    ],
+    "codeFlows": ["..."],
+    "properties": { "severity": "high", "hops": 2 }
+}
+```
+
+### Conditions before the sink
+
+A sink selector can list `interceptors`: queries that report what stands between the source and the sink. The taintwire-queries pack gives every rule its guard queries. They find each condition the tainted value must pass for the sink to run: an enclosing `if` or ternary, the left side of `&&`/`||`, or an earlier `if (...) return;`. They also find the checks inside those conditions that they recognize, such as `indexOf`, `includes`, `startsWith`, `endsWith`, a regex test, a comparison with a literal, `typeof` and `length`. A condition counts only when it reads the tainted value, and it must be in the same function as the sink.
+
+```text
+[+] "postMessage data reaches an HTML, JS execution or navigation sink" found in chunk inline-0.js
+inline-0.js:5:48 <- inline-0.js:3:38 (2 hops)
+url
+[i] Conditions before the sink:
+    inline-0.js:4:32 if, must be true: url.indexOf('http:') > -1 || url.indexOf('https:') > -1
+      inline-0.js:4:32 contains "http:": url.indexOf('http:') > -1
+      inline-0.js:4:61 contains "https:": url.indexOf('https:') > -1
+```
+
+A guard line gives the condition and whether it must be true or false. The lines under it describe the checks inside it, each as written: a `!` around a check, or the guard's polarity, still applies. In `taintwire.json`, each finding has them in `interceptors`, as `kind`, `text`, `location` and `code`.
 
 - Exits with code 39 if the PookieGraph doesn't exist, or if a `.tw` file's `manifest.json` is missing, malformed or lists no graphs.
 - Exits with code 40 if a `.pgq` file is invalid or a query doesn't compile.
@@ -94,8 +158,7 @@ A `.pgq` file is code. `js-recon` evaluates it in a separate Node.js process und
 ```bash
 js-recon lazyload -u https://example.com
 js-recon taintwire build -d output/example.com -o example.pg
-git clone https://github.com/js-recon/taintwire-queries
-js-recon taintwire analyze -g example.pg -q taintwire-queries/rules
+js-recon taintwire analyze -g example.pg
 ```
 
 ### Check your own queries
