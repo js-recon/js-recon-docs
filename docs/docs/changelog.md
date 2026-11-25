@@ -6,6 +6,12 @@ sidebar_position: 13
 
 This page tracks user-facing changes to js-recon, mirroring the `dev`-branch `CHANGELOG.md` in the tool's own repository.
 
+## 2.1.0-alpha.5 - 2026-11-25
+
+### Added
+
+- `--compress-js-files <compression-type>` archives the JS output directory once everything that reads it has finished, then deletes the directory. Types: `tar` (`.tar`), `gzip` (`.tar.gz`), `brotli` (`.tar.br`), `zstd` (`.tar.zst`, Node.js 22.15 or later) and `zip` (`.zip`, up to 65,535 files and 4 GiB). `run` archives `output` in single-target mode and each target's directory in batch mode after it is merged into the global `js-recon.db`. `lazyload` archives its output directory when it finishes. Only regular files and directories are stored: symlinks are left out, hard links are stored as copies, member names stay under the archived directory, modes are reset to 0644/0755 with no owner, and the archive is created owner-only (0600). An existing file or symlink at the archive path is never overwritten. If the type is invalid or the archive can't be written, the command exits with `42` and the directory is kept. (`lazyload`, `run`)
+
 ## 2.1.0-alpha.3 - 2026-11-09
 
 ### Added
