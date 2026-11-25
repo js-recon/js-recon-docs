@@ -52,19 +52,20 @@ The database's memory (`--buffer-pool`) defaults to half of what the process may
 js-recon taintwire analyze -g <file.pg|file.tw> [-q <file/dir>] [--output-json taintwire.json] [--output-sarif <file>]
 ```
 
-| Option                          | Alias | Description                                                                        | Default                                     | Required |
-| ------------------------------- | ----- | ---------------------------------------------------------------------------------- | ------------------------------------------- | -------- |
-| `--graph <file>`                | `-g`  | PookieGraph file (`.pg`) or units file (`.tw`) built by `taintwire build`.         |                                             | Yes      |
-| `--queries <file/dir>`          | `-q`  | A `.pgq` file, or a directory searched recursively for them.                       | `~/.js-recon/taintwire-queries/rules`       | No       |
-| `--output-json <file>`          |       | Findings file, in the `analyze.json` format.                                       | `taintwire.json`                            | No       |
-| `--output-sarif <file>`         |       | Also write the findings to this file, in SARIF 2.1.0 format.                       |                                             | No       |
-| `--disable-rules-version-check` |       | Use the cached taintwire-queries pack without checking GitHub for a newer release. | `false`                                     | No       |
-| `--buffer-pool <MB>`            |       | As for `build`.                                                                    | Half of the container's or machine's memory | No       |
-| `--threads <n>`                 |       | As for `build`.                                                                    | `2`                                         | No       |
+| Option                          | Alias | Description                                                                                                                           | Default                                     | Required |
+| ------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | -------- |
+| `--graph <file>`                | `-g`  | PookieGraph file (`.pg`) or units file (`.tw`) built by `taintwire build`.                                                            |                                             | Yes      |
+| `--queries <file/dir>`          | `-q`  | A `.pgq` file, or a directory searched recursively for them.                                                                          | `~/.js-recon/taintwire-queries/rules`       | No       |
+| `--output-json <file>`          |       | Findings file, in the `analyze.json` format.                                                                                          | `taintwire.json`                            | No       |
+| `--output-sarif <file>`         |       | Also write the findings to this file, in SARIF 2.1.0 format.                                                                          |                                             | No       |
+| `--disable-rules-version-check` |       | Use the cached taintwire-queries pack without checking GitHub for a newer release.                                                    | `false`                                     | No       |
+| `--suppress-confined`           |       | Leave out findings whose value lands in a position that is safe for their rule (see [Where the value lands](#where-the-value-lands)). | `false`                                     | No       |
+| `--buffer-pool <MB>`            |       | As for `build`.                                                                                                                       | Half of the container's or machine's memory | No       |
+| `--threads <n>`                 |       | As for `build`.                                                                                                                       | `2`                                         | No       |
 
 Without `-q`, the command uses the [taintwire-queries](https://github.com/js-recon/taintwire-queries) pack. It downloads the pack's latest release to `~/.js-recon/taintwire-queries` the first time it runs. On later runs, it downloads the pack again when the `version.txt` there doesn't match the latest release, the same way `analyze` keeps `~/.js-recon/rules` up to date. `--disable-rules-version-check`, or the `JS_RECON_DISABLE_RULES_VERSION_CHECK=true` environment variable, skips that check once the pack is cached. The `-w-rules` Docker images ship the pack and set that variable, so they run without downloading it.
 
-The command evaluates the `.pgq` files in a sandbox (see below), validates them, and checks that every query compiles. It then opens the PookieGraph read-only and runs the rules. Each finding is printed with its location, the source it came from and the hop count, as with the taintwire engine. When a rule's sink lists interceptors (see [Conditions before the sink](#conditions-before-the-sink)), the conditions found are printed below it.
+The command evaluates the `.pgq` files in a sandbox (see below), validates them, and checks that every query compiles. It then opens the PookieGraph read-only and runs the rules. Each finding is printed with its location, the source it came from and the hop count, as with the taintwire engine. When a rule's sink lists interceptors (see [Conditions before the sink](#conditions-before-the-sink)), the conditions found are printed below it, and the same goes for confinements (see [Where the value lands](#where-the-value-lands)).
 
 The findings are always written to `--output-json` (`taintwire.json`), in the same format as `analyze.json`. With `--output-sarif <file>`, they are also written to that file as a [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html) log, which GitHub code scanning, the VS Code SARIF Viewer and other SARIF tools can read.
 
@@ -76,6 +77,7 @@ In the SARIF file:
 - `locations[0]` is the sink. Its `region.snippet.text` holds up to 300 characters of the sink's code.
 - When a rule follows a flow, `relatedLocations[0]` is the source and `codeFlows` lists the source and then the sink. `properties.hops` is the length of the flow.
 - Each interceptor is one more related location (`id` 2 and up), with a message such as `if, must be true` or `check: contains "http:"`. A guard is also a step of the code flow between source and sink, with `kinds: ["branch"]`. `properties.interceptors` lists them all with `kind`, `text`, `file`, `line`, `column` and `code`.
+- Each confinement is a related location after the interceptors, with a message such as `confined: path, after "/login?next="`. `properties.confinements` lists them with the same fields. Confinements are not steps of the code flow.
 - `startLine` and `startColumn` start at 1. The console output counts columns from 0, so it shows each column as one less than the SARIF file.
 
 ```json
@@ -125,6 +127,36 @@ url
 ```
 
 A guard line gives the condition and whether it must be true or false. The lines under it describe the checks inside it, each as written: a `!` around a check, or the guard's polarity, still applies. In `taintwire.json`, each finding has them in `interceptors`, as `kind`, `text`, `location` and `code`.
+
+### Where the value lands
+
+A sink selector can also list `confinements`: queries that report how the value ends up in the sink, as the fixed structure around the tainted part. The taintwire-queries pack gives them to the URL, request, jQuery selector and postMessage rules. They look at the last string join (`+`, a template literal or `.concat()`) on the way to the sink, even when it is several calls before the sink, and report:
+
+| Kind       | When                                                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `path`     | The string starts with `/` and a fixed character other than `/` or `\`, so it stays a path on the same origin.                                          |
+| `query`    | A fixed `?` comes before the value, and nothing before it is tainted.                                                                                   |
+| `fragment` | The same with `#`.                                                                                                                                      |
+| `origin`   | A fixed scheme and host come first, closed by `/`, `?` or `#`: `"https://example.com/"`, `location.origin + "/"`.                                       |
+| `selector` | A `$()`/`jQuery()` string whose first non-space character is fixed and not `<`, or `location.hash` itself. jQuery 1.9 and later don't parse it as HTML. |
+| `sink`     | The sink confines it: `history.pushState`/`replaceState` (same-origin URLs only), or `postMessage` with a fixed target origin.                          |
+
+```text
+[i] Where the value lands in the sink:
+    a.js:7:3 path, after "/login?next=": "/login?next=".concat(q)
+    a.js:7:3 query, after "/login?next=": "/login?next=".concat(q)
+```
+
+In `taintwire.json`, each finding has them in `confinements`, with the same fields as `interceptors`.
+
+By default confinements are only reported. With `--suppress-confined`, a finding is left out when one of its confinements makes it safe for its rule:
+
+- `open_redirect_url`, `link_manipulation_url`: `path`, `query`, `fragment` or `origin`
+- `cspt_url_request`, `cspt_extended_request`: `query` or `fragment` only. After a fixed path or host the value can still hold `../`.
+- `jquery_selector_url`, `dom_xss_framework_sinks`: `selector`
+- `dom_data_manipulation`, `web_message_manipulation`: `sink`
+
+Other rules are never left out. The count of findings left out is printed at the end.
 
 - Exits with code 39 if the PookieGraph doesn't exist, or if a `.tw` file's `manifest.json` is missing, malformed or lists no graphs.
 - Exits with code 40 if a `.pgq` file is invalid or a query doesn't compile.
