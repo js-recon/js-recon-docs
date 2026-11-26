@@ -76,8 +76,9 @@ In the SARIF file:
 - `level` comes from the rule's severity: `critical` and `high` become `error`, `medium` becomes `warning`, and `low` and `info` become `note`. `properties.severity` keeps the original value.
 - `locations[0]` is the sink. Its `region.snippet.text` holds up to 300 characters of the sink's code.
 - When a rule follows a flow, `relatedLocations[0]` is the source and `codeFlows` lists the source and then the sink. `properties.hops` is the length of the flow.
-- Each interceptor is one more related location (`id` 2 and up), with a message such as `if, must be true` or `check: contains "http:"`. A guard is also a step of the code flow between source and sink, with `kinds: ["branch"]`. `properties.interceptors` lists them all with `kind`, `text`, `file`, `line`, `column` and `code`.
-- Each confinement is a related location after the interceptors, with a message such as `confined: path, after "/login?next="`. `properties.confinements` lists them with the same fields. Confinements are not steps of the code flow.
+- Each interceptor is one more related location (`id` 2 and up), with a message such as `interceptor: if, must be true` or `interceptor: check: contains "http:"`. A guard is also a step of the code flow between source and sink, with `kinds: ["branch"]`. `properties.interceptors` lists them all with `kind`, `text`, `file`, `line`, `column` and `code`.
+- Each confinement is a related location after the interceptors, with a message such as `confinement: path, after "/login?next="`. `properties.confinements` lists them with the same fields. Confinements are not steps of the code flow.
+- `properties.explanation` is the finding's `explanation` (see [Why a finding may be safe](#why-a-finding-may-be-safe)).
 - `startLine` and `startColumn` start at 1. The console output counts columns from 0, so it shows each column as one less than the SARIF file.
 
 ```json
@@ -157,6 +158,25 @@ By default confinements are only reported. With `--suppress-confined`, a finding
 - `dom_data_manipulation`, `web_message_manipulation`: `sink`
 
 Other rules are never left out. The count of findings left out is printed at the end.
+
+### Why a finding may be safe
+
+Interceptors and confinements give separate reasons, so `taintwire.json` keeps them apart in `explanation`. Each side is there only when the finding has interceptors or confinements:
+
+| Field                          | Description                                                                                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `confinements.barrier`         | `true` when one of the confinements makes the finding safe for its rule: the list above, which is what `--suppress-confined` leaves out. |
+| `confinements.kinds`           | The confinement kinds found.                                                                                                             |
+| `confinements.reason`          | Which kinds are a barrier and why, or why none is.                                                                                       |
+| `interceptors.barrier`         | Always `null`. Interceptors describe the conditions before the sink, but js-recon doesn't judge them a barrier.                          |
+| `interceptors.kinds`, `reason` | The interceptor kinds found, and a note that they aren't judged.                                                                         |
+
+```json
+"explanation": {
+  "interceptors": { "barrier": null, "kinds": ["string"], "reason": "conditions before the sink; not judged a barrier (no interceptor policy)" },
+  "confinements": { "barrier": false, "kinds": ["path"], "reason": "path is not a barrier for cspt_url_request (only query, fragment)" }
+}
+```
 
 - Exits with code 39 if the PookieGraph doesn't exist, or if a `.tw` file's `manifest.json` is missing, malformed or lists no graphs.
 - Exits with code 40 if a `.pgq` file is invalid or a query doesn't compile.
