@@ -6,11 +6,46 @@ sidebar_position: 13
 
 This page tracks user-facing changes to js-recon, mirroring the `dev`-branch `CHANGELOG.md` in the tool's own repository.
 
-## 2.1.0-alpha.5 - 2026-11-25
+## 2.1.0-alpha.5 - 2026-11-26
 
 ### Added
 
 - `--compress-js-files <compression-type>` archives the JS output directory once everything that reads it has finished, then deletes the directory. Types: `tar` (`.tar`), `gzip` (`.tar.gz`), `brotli` (`.tar.br`), `zstd` (`.tar.zst`, Node.js 22.15 or later) and `zip` (`.zip`, up to 65,535 files and 4 GiB). `run` archives `output` in single-target mode and each target's directory in batch mode after it is merged into the global `js-recon.db`. `lazyload` archives its output directory when it finishes. Only regular files and directories are stored: symlinks are left out, hard links are stored as copies, member names stay under the archived directory, modes are reset to 0644/0755 with no owner, and the archive is created owner-only (0600). An existing file or symlink at the archive path is never overwritten. If the type is invalid or the archive can't be written, the command exits with `42` and the directory is kept. (`lazyload`, `run`)
+- `taintwire analyze` prints a finding's confinements under it: where the tainted value lands in the sink (a same-origin path, the query or fragment, a fixed origin, a jQuery selector that doesn't start with `<`, or a sink API that confines it, such as same-origin `history.pushState` or a `postMessage` with a pinned target origin). They come from the taintwire-queries pack and are kept in `taintwire.json` (`confinements`) and SARIF (related locations and `properties.confinements`). `--analyze-taintwire` writes them to `analyze.json` too. (`analyze`, `run`, `taintwire`)
+- `taintwire analyze --suppress-confined` leaves out findings whose confinement is a barrier for their rule. Navigation and link rules accept a path, query, fragment or origin; client-side path traversal rules accept only the query or fragment, since `../` still traverses after a fixed path; jQuery selector rules accept a selector; `dom_data_manipulation` and `web_message_manipulation` accept a confining sink API. Other rules are never suppressed. (`taintwire`)
+- Each finding with interceptors or confinements gets an `explanation`, in the JSON output and in SARIF `properties.explanation`, that keeps the two apart: the confinements side says whether they are a barrier for the rule (the `--suppress-confined` policy), which kinds were found and why; the interceptors side always has `barrier: null`, since there is no interceptor policy yet. SARIF related locations are labelled `interceptor:` or `confinement:`. (`analyze`, `run`, `taintwire`)
+
+### Changed
+
+- taintwire is updated to 0.2.0-alpha.7, which runs the confinement queries of a sink selector. `taintwire analyze` without `-q` now downloads taintwire-queries v0.2.0, which adds interceptors, confinements and the `dom_clobbering_sanitizer`, `innerhtml_detached_decode` and `jquery_selector_url` rules. (`analyze`, `map`, `run`, `taintwire`)
+
+## 2.1.0-alpha.4 - 2026-11-23
+
+### Added
+
+- `taintwire analyze` uses the taintwire-queries pack when `-q` is not given. It is downloaded to `~/.js-recon/taintwire-queries` and checked against the latest GitHub release, like the rules pack (`--disable-rules-version-check` skips the check). The `-w-rules` Docker images ship it. (`taintwire`)
+- `taintwire analyze` prints the conditions a value passes before it reaches the sink (from the pack's interceptors) under each finding, and keeps them in the output. It always writes `--output-json` (default `taintwire.json`, the `analyze.json` finding shape), and writes SARIF 2.1.0 with `--output-sarif <file>`, where the conditions are related locations, branch steps of the code flow and properties. `-o` is removed. (`taintwire`)
+- `taintwire build` and `taintwire analyze` show progress bars. (`taintwire`)
+- `--map-taintwire` loads every file into one linked graph (no prefilter), so calls are resolved across webpack, Turbopack and ES-module chunks and classic scripts. For Next.js it loads the chunk files and maps results back to modules. Its value resolver follows destructuring, object and array literals, and React hooks (`useState` with its setter and `slicedToArray`, `useRef`, `useMemo`, `useReducer`, `useContext`). (`map`, `run`)
+- The generic lazyload saves the JavaScript in event-handler attributes (`on*`) as `<attr>-N.js` and in `javascript:` attribute URLs as `javascript-N.js`, next to the page's inline scripts, with a `File Source` header. Identical bodies on a page are saved once. (`lazyload`, `run`)
+
+### Changed
+
+- The refactor step of `run` is now opt-in with `--enable-refactor`, which replaces `--disable-refactor`. A `run.disableRefactor` key left in an existing config file is ignored. (`run`)
+- The Next.js lazyload method `next_routerStateForge` is split into two methods, so each technique can be turned on or off on its own. `next_rsfAncestorClaim` claims the route's parent path segments as ordinary segments (the full parent chain, then only the first segment). `next_rsfParamBruteforce` claims the last parent segment as a dynamic route segment, guessing its parameter name from the wordlist and then from names found in responses already received (`--rsc-param-bruteforce-limit`). With both on, the requests are the same, in the same order, as before. `next_routerStateForge` is no longer a valid name for `--include-methods` or `--exclude-methods`. The research-output keys `next_routerStateForge`, `next_routerStateForge_metadataOnly` and `next_routerStateForge_legacyKeyAccepted` are replaced by `next_rsfAncestorClaim`, `next_rsfParamBruteforce` (each with a `_metadataOnly` variant) and `next_rsf_legacyKeyAccepted`. (`lazyload`, `run`)
+
+### Fixed
+
+- `--analyze-taintwire` runs the rules on one linked graph of every chunk, with the prefilter applied per linked unit, so flows across classic scripts and chunks are found. (`analyze`, `run`)
+- `--analyze-taintwire` skips known vendor library builds (by `File Source` name or banner) unless `--taintwire-include-vendor` is set. Unminified UMD React, ReactDOM or AngularJS builds on sites without a bundler made it run for over 15 minutes with no output. It now prints progress per graph and rule, and rewrites `analyze.json` after every rule so an interrupted run keeps its findings. (`analyze`, `run`)
+- `--map-taintwire` only takes a config call whose method or type is an HTTP verb, rejects client-call URLs that contain whitespace or markup, only treats `{url}` objects with request keys as config calls, and caches resolver lookups (each point query on a whole-app graph cost 5-20 ms). (`map`, `run`)
+- A site that loads React or Vue as a global script build with no bundler is now crawled with the generic lazyload. (`lazyload`, `run`)
+- Pages that differ only by query string (`/post?id=1`, `/post?id=2`) share an output directory, and each one's inline and attribute scripts overwrote the previous page's. A taken file name is now skipped if the body is the same, and otherwise the next free number is used. (`lazyload`, `run`)
+- taintwire is updated to 0.2.0-alpha.6. Classic scripts are linked through their shared global scope, ES-module chunks (Vite, Rollup, esbuild) through their imports and exports, a sink can list the conditions before it, and a sloppy-mode global assigned without a declaration (`x = v`, common in inline event handlers) now carries its value to later reads of `x`. (`analyze`, `map`, `run`, `taintwire`)
+
+### Security
+
+- `hono` is overridden to 4.13.19 (GHSA-4m76-xfj5-7975 and others), a dependency of `@modelcontextprotocol/sdk`. (`mcp`)
 
 ## 2.1.0-alpha.3 - 2026-11-09
 
