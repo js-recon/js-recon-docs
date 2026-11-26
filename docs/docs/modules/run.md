@@ -113,7 +113,7 @@ js-recon run -u https://example.com -y --compress-js-files zstd
 tar --zstd -xf output.tar.zst   # extract before running another command on the files
 ```
 
-The archive holds only regular files and directories. Symlinks are left out and hard links are stored as copies. Every member name stays inside the archived directory. Modes are reset to 0644 for files and 0755 for directories, with no owner. The archive file is created readable only by you (0600). If a file or symlink already exists at the archive path, nothing is overwritten: the command exits with code `42` and keeps the directory.
+The archive holds only regular files and directories. Symlinks are left out and hard links are stored as copies. Every member name stays inside the archived directory. Modes are reset to 0644 for files and 0755 for directories, with no owner. The archive file is created readable only by you (0600). If a file or symlink already exists at the archive path, nothing is overwritten: the command exits with code `42` and keeps the directory. If the archive is written but the directory can't be removed afterwards, the archive is kept and the command also exits with `42`.
 
 Commands such as `strings`, `map` and `analyze` don't read archives, so extract one before running them on its files.
 
