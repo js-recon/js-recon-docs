@@ -98,17 +98,20 @@ The bundled rules detect both request-level misconfigurations (for example, miss
 
 ### Fields
 
-| Field             | Type       | Description                                                                                   |
-| ----------------- | ---------- | --------------------------------------------------------------------------------------------- |
-| `ruleId`          | `string`   | Unique rule identifier from the YAML rule file.                                               |
-| `ruleName`        | `string`   | Human-readable rule name.                                                                     |
-| `ruleType`        | `string`   | Engine that produced the finding: `ast`, `request`, `cs-mast-s`, or `taintwire`.              |
-| `ruleDescription` | `string`   | Description of what the rule detects.                                                         |
-| `ruleAuthor`      | `string`   | Author of the rule.                                                                           |
-| `ruleTech`        | `string[]` | Technologies the rule targets. Values: `next`, `vue`, `react`, `svelte`, `angular`, or `all`. |
-| `severity`        | `string`   | Finding severity: `info`, `low`, `medium`, or `high`.                                         |
-| `message`         | `string`   | One-line summary of the finding (see below).                                                  |
-| `findingLocation` | `string`   | Where the finding was detected (see below).                                                   |
+| Field             | Type       | Description                                                                                                                                                    |
+| ----------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ruleId`          | `string`   | Unique rule identifier from the YAML rule file.                                                                                                                |
+| `ruleName`        | `string`   | Human-readable rule name.                                                                                                                                      |
+| `ruleType`        | `string`   | Engine that produced the finding: `ast`, `request`, `cs-mast-s`, or `taintwire`.                                                                               |
+| `ruleDescription` | `string`   | Description of what the rule detects.                                                                                                                          |
+| `ruleAuthor`      | `string`   | Author of the rule.                                                                                                                                            |
+| `ruleTech`        | `string[]` | Technologies the rule targets. Values: `next`, `vue`, `react`, `svelte`, `angular`, or `all`.                                                                  |
+| `severity`        | `string`   | Finding severity: `info`, `low`, `medium`, or `high`.                                                                                                          |
+| `message`         | `string`   | One-line summary of the finding (see below).                                                                                                                   |
+| `findingLocation` | `string`   | Where the finding was detected (see below).                                                                                                                    |
+| `interceptors`    | `object[]` | `taintwire analyze` only, when present: conditions before the sink ([details](./taintwire.md#conditions-before-the-sink)).                                     |
+| `confinements`    | `object[]` | `taintwire analyze` only, when present: where the value lands in the sink ([details](./taintwire.md#where-the-value-lands)).                                   |
+| `explanation`     | `object`   | `taintwire analyze` only, when present: the reasons from interceptors and from confinements, kept apart ([details](./taintwire.md#why-a-finding-may-be-safe)). |
 
 ### `message` format
 
