@@ -141,3 +141,4 @@ unconfigured
 [Pp]ga
 [Rr]ollup
 unminified
+prefilter(ed|s)?
